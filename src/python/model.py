@@ -1,5 +1,13 @@
 import numpy as np
+from numba import jit
 
+@jit(nopython=True)
+def permute(matching, n):
+    for i in range(n-1):
+        j = i + np.random.randint(n-i)
+        temp = matching[i]
+        matching[i] = matching[j]
+        matching[j] = temp
 
 class Model:
     def __init__(self, number_of_agents, R, S, T, P):
@@ -19,6 +27,7 @@ class Model:
         self.ingroup = np.ones(number_of_agents, dtype=float)
         self.outgroup = np.zeros(number_of_agents, dtype=float)
 
+        self.matching_indices = list(range(self.number_of_agents))
 
         self.tags = np.ones(number_of_agents, dtype=int)
         self.payoffs = np.zeros(number_of_agents, dtype=float)
@@ -50,7 +59,6 @@ class Model:
 
             return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
-
         else:
             # outgroup interaction
 
@@ -71,4 +79,15 @@ class Model:
             return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
     def compute_payoff(self, samples):
-        pass
+        self.payoffs = np.zeros(self.number_of_agents)
+        for _ in range(samples):
+            permute(self.matching_indices, self.number_of_agents)
+            for i in range(0, self.number_of_agents, 2):
+                focal_index = self.matching_indices[i]
+                other_index = self.matching_indices[i + 1]
+                payoff_focal, payoff_other = self.encounter(focal_index, other_index)
+                self.payoffs[focal_index] = self.payoffs[focal_index]  + payoff_focal
+                self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
+
+
+
