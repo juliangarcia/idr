@@ -88,6 +88,81 @@ class Model:
                 payoff_focal, payoff_other = self.encounter(focal_index, other_index)
                 self.payoffs[focal_index] = self.payoffs[focal_index]  + payoff_focal
                 self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
+        self.payoffs = self.payoffs/samples
+
+    def step(self, samples, selection_intensity):
+        # Compute the current payoff
+        self.compute_payoff(samples)
+
+        # Find the fitness probability distribution (using exponential selection intensity) for each group
+        payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_agents // 2]))
+        payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_agents // 2:]))
+
+        fitness_probabilities_0 = np.exp(selection_intensity*self.payoffs[0:self.number_of_agents//2])/payoff_sum_0
+        fitness_probabilities_1 = np.exp(selection_intensity*self.payoffs[self.number_of_agents//2:])/payoff_sum_1
+
+        new_ingroup = []
+        new_outgroup = []
+        new_payoffs = []
+        
+        # Create a new generation of agents.  Sampling occurs within group only, to maintain group balance.
+        for i in range(self.number_of_agents):
+            if i < self.number_of_agents//2:
+                current_agent = np.random.choice(range(self.number_of_agents// 2), p = fitness_probabilities_0)
+            else:
+                current_agent = np.random.choice(range(self.number_of_agents// 2, self.number_of_agents), p = fitness_probabilities_1)
+
+            new_ingroup.append(self.ingroup[current_agent])
+            new_outgroup.append(self.outgroup[current_agent])
+            new_payoffs.append(self.payoffs[current_agent])
+        
+        self.ingroup = np.array(new_ingroup)
+        self.outgroup = np.array(new_outgroup)
+        self.payoffs = np.array(new_payoffs)
+
+        # Compute fitness array
+        total_payoffs_sum = np.sum(np.exp(selection_intensity*self.payoffs))
+        self.fitness = np.exp(selection_intensity*self.payoffs)/total_payoffs_sum
+        
+        # Work out the 25% and 75% percentiles of fitnesses
+        p_25 = np.percentile(self.fitness, 25)
+        p_75 = np.percentile(self.fitness, 75)
+
+        # Update agents beliefs/strategies
+        for i in range(self.number_of_agents):
+
+            if self.fitness[i] < p_25:
+            # Agent is in the bottom 25% so update their ingroup and outgroup strategies by sampling 
+            # from a Gaussian distribution with mean of the agent's current theta and standard deviation of 5%
+                current_ingroup_strategy = self.ingroup[i]
+                s = -1
+                while 0 > s or s > 1:
+                    s = np.random.normal(current_ingroup_strategy, 0.05, 1)
+                self.ingroup[i] = s
+                current_outgroup_strategy = self.outgroup[i]
+                s = -1
+                while 0 > s or s > 1:
+                    s = np.random.normal(current_outgroup_strategy, 0.05, 1)
+                self.outgroup[i] = s
+
+            if p_25 <= self.fitness[i] <= p_75:
+            # Agent is in the middle 50% so update their ingroup and outgroup strategies by sampling 
+            # from a Gaussian distribution with mean of the agent's current theta and standard deviation of 2.5%
+                current_ingroup_strategy = self.ingroup[i]
+                s = -1
+                while 0 > s or s > 1:
+                    s = np.random.normal(current_ingroup_strategy, 0.025, 1)
+                self.ingroup[i] = s
+                current_outgroup_strategy = self.outgroup[i]
+                s = -1
+                while 0 > s or s > 1:
+                    s = np.random.normal(current_outgroup_strategy, 0.025, 1)
+                self.outgroup[i] = s
+
+            # Agent is in the top 25% so do not update their strategies/beliefs
 
 
-
+def main(number_of_agents, R, S, T, P, number_of_steps, rounds_per_step, selection_intensity):
+    model = Model(number_of_agents, R, S, T, P)
+    for _ in range(number_of_steps):
+        model.step(rounds_per_step, selection_intensity)
