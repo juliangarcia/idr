@@ -10,14 +10,14 @@ def permute(matching, n):
         matching[j] = temp
 
 class Model:
-    def __init__(self, number_of_agents, R, S, T, P):
+    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po):
 
         # 1 is cooperate
         # 0 is defect
-        self.game = np.array([[P, T], [S, R]])
 
-        # test
-
+        # stag hunt so payoff matrix for focal player and other player 
+        self.game_focal = np.array([[Pf, Tf], [Sf, Rf]])
+        self.game_other = np.array([[Po, To], [So, Ro]])
 
         # let us assume pops are even
         assert number_of_agents % 2 == 0
@@ -47,39 +47,39 @@ class Model:
             # ingroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
+            choice_0_value = np.dot(self.game_focal[0], np.array([self.ingroup[index_focal],
                                                             1.0 - self.ingroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
+            choice_1_value = np.dot(self.game_focal[1], np.array([self.ingroup[index_focal],
                                                             1.0 - self.ingroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
+            choice_0_value = np.dot(self.game_other[0], np.array([self.ingroup[index_other],
                                                             1.0 - self.ingroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
+            choice_1_value = np.dot(self.game_other[1], np.array([self.ingroup[index_other],
                                                             1.0 - self.ingroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
 
         else:
             # outgroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
+            choice_0_value = np.dot(self.game_focal[0], np.array([self.outgroup[index_focal],
                                                             1.0 - self.outgroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
+            choice_1_value = np.dot(self.game_focal[1], np.array([self.outgroup[index_focal],
                                                             1.0 - self.outgroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
+            choice_0_value = np.dot(self.game_other[0], np.array([self.outgroup[index_other],
                                                             1.0 - self.outgroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
+            choice_1_value = np.dot(self.game_other[1], np.array([self.outgroup[index_other],
                                                             1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+            return self.game[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
 
     def compute_payoff(self, samples):
         self.payoffs = np.zeros(self.number_of_agents)
@@ -165,7 +165,7 @@ class Model:
             # Agent is in the top 25% so do not update their strategies/beliefs
 
 
-def main(number_of_agents, R, S, T, P, number_of_steps, rounds_per_step, selection_intensity):
-    model = Model(number_of_agents, R, S, T, P)
+def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, number_of_steps, rounds_per_step, selection_intensity):
+    model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po)
     for _ in range(number_of_steps):
         model.step(rounds_per_step, selection_intensity)
