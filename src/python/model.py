@@ -16,6 +16,9 @@ class Model:
         # 0 is defect
         self.game = np.array([[P, T], [S, R]])
 
+        # test
+
+
         # let us assume pops are even
         assert number_of_agents % 2 == 0
 
