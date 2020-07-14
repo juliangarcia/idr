@@ -16,8 +16,8 @@ class Model:
         # 0 is defect
 
         # stag hunt so payoff matrix for focal player and other player 
-        self.game_focal = np.array([[Pf, Tf], [Sf, Rf]])
-        self.game_other = np.array([[Po, To], [So, Ro]])
+        self.game_focal = np.array([[Rf, Sf], [Tf, Pf]])
+        self.game_other = np.array([[Ro, So], [To, Po]])
 
         # let us assume pops are even
         assert number_of_agents % 2 == 0
@@ -79,7 +79,7 @@ class Model:
                                                             1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
+            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
 
     def compute_payoff(self, samples):
         self.payoffs = np.zeros(self.number_of_agents)
