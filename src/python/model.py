@@ -148,23 +148,24 @@ class Model:
         # Create a new generation of agents.  Sampling occurs within group only, to maintain group balance.
         for i in range(self.number_of_agents):
             if i < self.number_of_agents//2:
-                current_agent = np.random.choice(range(self.number_of_agents// 2), p = fitness_probabilities_0)
+                current_agent = np.random.choice(range(self.number_of_agents // 2), p=fitness_probabilities_0)
             else:
-                current_agent = np.random.choice(range(self.number_of_agents// 2, self.number_of_agents), p = fitness_probabilities_1)
+                current_agent = np.random.choice(range(self.number_of_agents // 2, self.number_of_agents),
+                                                 p=fitness_probabilities_1)
             
             # If performance independent belief perturbation is required, do so
             if performance_independent:
                 if np.random.rand() <= perturbation_probability:
-                    delta_in = np.random.normal(0.0,perturbation_scale)
-                    while self.ingroup[current_agent] + delta_in < 0 or self.ingroup[current_agent] + delta_in >1:
-                        delta_in = np.random.normal(0.0,perturbation_scale)
+                    delta_in = np.random.normal(0.0, perturbation_scale)
+                    while self.ingroup[current_agent] + delta_in < 0 or self.ingroup[current_agent] + delta_in > 1:
+                        delta_in = np.random.normal(0.0, perturbation_scale)
                     
-                    delta_out = np.random.normal(0.0,perturbation_scale)
-                    while self.outgroup[current_agent] + delta_out < 0 or self.outgroup[current_agent] + delta_out >1:
-                        delta_out = np.random.normal(0.0,perturbation_scale)
+                    delta_out = np.random.normal(0.0, perturbation_scale)
+                    while self.outgroup[current_agent] + delta_out < 0 or self.outgroup[current_agent] + delta_out > 1:
+                        delta_out = np.random.normal(0.0, perturbation_scale)
                 else:
-                    delta_in = 0
-                    delta_out = 0
+                    delta_in = 0.0
+                    delta_out = 0.0
 
                 new_ingroup.append(self.ingroup[current_agent] + delta_in)
                 new_outgroup.append(self.outgroup[current_agent] + delta_out)
