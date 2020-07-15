@@ -109,20 +109,30 @@ class Model:
                 self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
         self.payoffs = self.payoffs/samples
 
-    def step(self, samples, selection_intensity, perturbation_probability=0.05, perturbation_scale=0.05, performance_independent=True):
+    def record_data(self):
+        # Record the average payoff for each group
+        self.avg_payoff_0_time_series.append(
+            np.sum(self.payoffs[0:self.number_of_agents // 2]) / len(self.payoffs[0:self.number_of_agents // 2]))
+        self.avg_payoff_1_time_series.append(
+            np.sum(self.payoffs[self.number_of_agents // 2:] / len(self.payoffs[self.number_of_agents // 2:])))
+
+        # Record average in/outgroup beliefs for each group
+        self.avg_ingroup_0_time_series.append(
+            np.sum(self.ingroup[0:self.number_of_agents // 2]) / len(self.ingroup[0:self.number_of_agents // 2]))
+        self.avg_ingroup_1_time_series.append(
+            np.sum(self.ingroup[self.number_of_agents // 2:] / len(self.ingroup[self.number_of_agents // 2:])))
+
+        self.avg_outgroup_0_time_series.append(
+            np.sum(self.outgroup[0:self.number_of_agents // 2]) / len(self.outgroup[0:self.number_of_agents // 2]))
+        self.avg_outgroup_1_time_series.append(
+            np.sum(self.outgroup[self.number_of_agents // 2:] / len(self.outgroup[self.number_of_agents // 2:])))
+
+    def step(self, samples, selection_intensity, perturbation_probability=0.05, perturbation_scale=0.05,
+             performance_independent=True):
         # Compute the current payoff
         self.compute_payoff(samples)
 
-        # Record the average payoff for each group
-        self.avg_payoff_0_time_series.append(np.sum(self.payoffs[0:self.number_of_agents // 2])/len(self.payoffs[0:self.number_of_agents // 2]))
-        self.avg_payoff_1_time_series.append(np.sum(self.payoffs[self.number_of_agents // 2:]/len(self.payoffs[self.number_of_agents // 2:])))
-
-        # Record average in/outgroup beliefs for each group
-        self.avg_ingroup_0_time_series.append(np.sum(self.ingroup[0:self.number_of_agents // 2])/len(self.ingroup[0:self.number_of_agents // 2]))
-        self.avg_ingroup_1_time_series.append(np.sum(self.ingroup[self.number_of_agents // 2:]/len(self.ingroup[self.number_of_agents // 2:])))
-
-        self.avg_outgroup_0_time_series.append(np.sum(self.outgroup[0:self.number_of_agents // 2])/len(self.outgroup[0:self.number_of_agents // 2]))
-        self.avg_outgroup_1_time_series.append(np.sum(self.outgroup[self.number_of_agents // 2:]/len(self.outgroup[self.number_of_agents // 2:])))
+        self.record_data()
 
         # Find the fitness probability distribution (using exponential selection intensity) for each group
         payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_agents // 2]))
