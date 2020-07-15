@@ -1,5 +1,6 @@
 import numpy as np
 from numba import jit
+import csv
 
 @jit(nopython=True)
 def permute(matching, n):
@@ -40,6 +41,10 @@ class Model:
         # Data Recording
         self.avg_payoff_0_time_series = []
         self.avg_payoff_1_time_series = []
+        self.avg_ingroup_0_time_series = []
+        self.avg_ingroup_1_time_series = []
+        self.avg_outgroup_0_time_series = []
+        self.avg_outgroup_1_time_series = []
 
     def encounter(self, index_focal, index_other):
         assert 0 <= index_focal < self.number_of_agents
@@ -104,6 +109,13 @@ class Model:
         self.avg_payoff_0_time_series.append(np.sum(self.payoffs[0:self.number_of_agents // 2])/len(self.payoffs[0:self.number_of_agents // 2]))
         self.avg_payoff_1_time_series.append(np.sum(self.payoffs[self.number_of_agents // 2:]/len(self.payoffs[self.number_of_agents // 2:])))
 
+        # Record average in/outgroup beliefs for each group
+        self.avg_ingroup_0_time_series.append(np.sum(self.ingroup[0:self.number_of_agents // 2])/len(self.ingroup[0:self.number_of_agents // 2]))
+        self.avg_ingroup_1_time_series.append(np.sum(self.ingroup[self.number_of_agents // 2:]/len(self.ingroup[self.number_of_agents // 2:])))
+
+        self.avg_outgroup_0_time_series.append(np.sum(self.outgroup[0:self.number_of_agents // 2])/len(self.outgroup[0:self.number_of_agents // 2]))
+        self.avg_outgroup_1_time_series.append(np.sum(self.outgroup[self.number_of_agents // 2:]/len(self.outgroup[self.number_of_agents // 2:])))
+
         # Find the fitness probability distribution (using exponential selection intensity) for each group
         payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_agents // 2]))
         payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_agents // 2:]))
@@ -130,7 +142,7 @@ class Model:
                         delta_in = np.random.normal(0.0,perturbation_scale)
                     
                     delta_out = np.random.normal(0.0,perturbation_scale)
-                    while self.ingroup[current_agent] + delta_out < 0 or self.ingroup[current_agent] + delta_out >1:
+                    while self.outgroup[current_agent] + delta_out < 0 or self.outgroup[current_agent] + delta_out >1:
                         delta_out = np.random.normal(0.0,perturbation_scale)
                 else:
                     delta_in = 0
