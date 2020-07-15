@@ -34,8 +34,8 @@ class Model:
         # will play strategy 0 - cooperate
 
         self.tags = np.ones(number_of_agents, dtype=int)
-        self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief)
-        self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief)
+        self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief, dtype=float)
+        self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief, dtype=float)
 
         for i in range(self.number_of_agents // 2):
             self.tags[i] = 0
@@ -44,7 +44,6 @@ class Model:
 
         self.matching_indices = list(range(self.number_of_agents))
         self.payoffs = np.zeros(number_of_agents, dtype=float)
-
 
         # Data Recording
         self.avg_payoff_0_time_series = []
@@ -144,7 +143,7 @@ class Model:
         new_ingroup = []
         new_outgroup = []
         new_payoffs = []
-        
+
         # Create a new generation of agents.  Sampling occurs within group only, to maintain group balance.
         for i in range(self.number_of_agents):
             if i < self.number_of_agents//2:
@@ -152,14 +151,14 @@ class Model:
             else:
                 current_agent = np.random.choice(range(self.number_of_agents // 2, self.number_of_agents),
                                                  p=fitness_probabilities_1)
-            
+
             # If performance independent belief perturbation is required, do so
             if performance_independent:
                 if np.random.rand() <= perturbation_probability:
                     delta_in = np.random.normal(0.0, perturbation_scale)
                     while self.ingroup[current_agent] + delta_in < 0 or self.ingroup[current_agent] + delta_in > 1:
                         delta_in = np.random.normal(0.0, perturbation_scale)
-                    
+
                     delta_out = np.random.normal(0.0, perturbation_scale)
                     while self.outgroup[current_agent] + delta_out < 0 or self.outgroup[current_agent] + delta_out > 1:
                         delta_out = np.random.normal(0.0, perturbation_scale)
@@ -173,9 +172,9 @@ class Model:
             else:
                 new_ingroup.append(self.ingroup[current_agent])
                 new_outgroup.append(self.outgroup[current_agent])
-            
+
             new_payoffs.append(self.payoffs[current_agent])
-        
+
         self.ingroup = np.array(new_ingroup)
         self.outgroup = np.array(new_outgroup)
         self.payoffs = np.array(new_payoffs)
@@ -185,7 +184,7 @@ class Model:
             # Compute fitness array
             total_payoffs_sum = np.sum(np.exp(selection_intensity*self.payoffs))
             self.fitness = np.exp(selection_intensity*self.payoffs)/total_payoffs_sum
-            
+
             # Work out the 25% and 75% percentiles of fitnesses
             p_25 = np.percentile(self.fitness, 25)
             p_75 = np.percentile(self.fitness, 75)
@@ -222,7 +221,7 @@ class Model:
                     self.outgroup[i] = s
 
                 # Agent is in the top 25% so do not update their strategies/beliefs
-        
+
     def run_simulation(self, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False, performance_independent=True, data_file_name='data.csv'):
         if data_recording:
             with open('data/' + data_file_name, 'w', newline='\n') as out_file:
@@ -232,9 +231,10 @@ class Model:
                     writer.writerow(self.payoffs)
         else:
             for _ in range(number_of_steps):
-                    self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
-    
+                self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
+
 
 def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
     model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out)
     model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
+
