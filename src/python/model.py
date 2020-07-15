@@ -64,16 +64,16 @@ class Model:
 
             # choice focal
             choice_0_value = np.dot(self.game_focal[0], np.array([self.ingroup[index_focal],
-                                                            1.0 - self.ingroup[index_focal]]))
+                                                                  1.0 - self.ingroup[index_focal]]))
             choice_1_value = np.dot(self.game_focal[1], np.array([self.ingroup[index_focal],
-                                                            1.0 - self.ingroup[index_focal]]))
+                                                                  1.0 - self.ingroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
             choice_0_value = np.dot(self.game_other[0], np.array([self.ingroup[index_other],
-                                                            1.0 - self.ingroup[index_other]]))
+                                                                  1.0 - self.ingroup[index_other]]))
             choice_1_value = np.dot(self.game_other[1], np.array([self.ingroup[index_other],
-                                                            1.0 - self.ingroup[index_other]]))
+                                                                  1.0 - self.ingroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
             return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
@@ -83,16 +83,16 @@ class Model:
 
             # choice focal
             choice_0_value = np.dot(self.game_focal[0], np.array([self.outgroup[index_focal],
-                                                            1.0 - self.outgroup[index_focal]]))
+                                                                  1.0 - self.outgroup[index_focal]]))
             choice_1_value = np.dot(self.game_focal[1], np.array([self.outgroup[index_focal],
-                                                            1.0 - self.outgroup[index_focal]]))
+                                                                  1.0 - self.outgroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
             choice_0_value = np.dot(self.game_other[0], np.array([self.outgroup[index_other],
-                                                            1.0 - self.outgroup[index_other]]))
+                                                                  1.0 - self.outgroup[index_other]]))
             choice_1_value = np.dot(self.game_other[1], np.array([self.outgroup[index_other],
-                                                            1.0 - self.outgroup[index_other]]))
+                                                                  1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
             return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
@@ -105,7 +105,7 @@ class Model:
                 focal_index = self.matching_indices[i]
                 other_index = self.matching_indices[i + 1]
                 payoff_focal, payoff_other = self.encounter(focal_index, other_index)
-                self.payoffs[focal_index] = self.payoffs[focal_index]  + payoff_focal
+                self.payoffs[focal_index] = self.payoffs[focal_index] + payoff_focal
                 self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
         self.payoffs = self.payoffs/samples
 
