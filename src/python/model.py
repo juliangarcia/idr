@@ -2,6 +2,7 @@ import numpy as np
 from numba import jit
 import csv
 
+
 @jit(nopython=True)
 def permute(matching, n):
     for i in range(n-1):
@@ -9,6 +10,7 @@ def permute(matching, n):
         temp = matching[i]
         matching[i] = matching[j]
         matching[j] = temp
+
 
 class Model:
     def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out):
