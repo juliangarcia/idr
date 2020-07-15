@@ -409,6 +409,15 @@ fabric.properties
 .idea/**/markdown-navigator.xml
 .idea/**/markdown-navigator/
 
+### VsCode ###
+
+.vscode
+.history
+
+### Jupyter Notebook ###
+
+.ipynb_checkpoints
+
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
