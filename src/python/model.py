@@ -11,7 +11,7 @@ def permute(matching, n):
         matching[j] = temp
 
 class Model:
-    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po):
+    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out):
 
         # 0 is cooperate
         # 1 is defect
@@ -28,8 +28,8 @@ class Model:
 
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
-        self.ingroup = np.ones(number_of_agents, dtype=float)
-        self.outgroup = np.zeros(number_of_agents, dtype=float)
+        self.ingroup = np.full(number_of_agents, tag1_in)
+        self.outgroup = np.full(number_of_agents, tag1_out)
 
         self.matching_indices = list(range(self.number_of_agents))
 
@@ -37,6 +37,8 @@ class Model:
         self.payoffs = np.zeros(number_of_agents, dtype=float)
         for i in range(self.number_of_agents // 2):
             self.tags[i] = 0
+            self.ingroup[i] = tag0_in
+            self.outgroup[i] = tag0_out
 
         # Data Recording
         self.avg_payoff_0_time_series = []
@@ -216,6 +218,6 @@ class Model:
                     self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
     
 
-def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
-    model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po)
+def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
+    model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out)
     model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
