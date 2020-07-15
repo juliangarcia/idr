@@ -13,7 +13,9 @@ def permute(matching, n):
 
 
 class Model:
-    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out):
+    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po,
+                 tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
+                 tag1_initial_ingroup_belief, tag1_initial_outgroup_belief):
 
         # 0 is cooperate
         # 1 is defect
@@ -30,17 +32,19 @@ class Model:
 
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
-        self.ingroup = np.full(number_of_agents, tag1_in)
-        self.outgroup = np.full(number_of_agents, tag1_out)
-
-        self.matching_indices = list(range(self.number_of_agents))
 
         self.tags = np.ones(number_of_agents, dtype=int)
-        self.payoffs = np.zeros(number_of_agents, dtype=float)
+        self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief)
+        self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief)
+
         for i in range(self.number_of_agents // 2):
             self.tags[i] = 0
-            self.ingroup[i] = tag0_in
-            self.outgroup[i] = tag0_out
+            self.ingroup[i] = tag0_initial_ingroup_belief
+            self.outgroup[i] = tag0_initial_outgroup_belief
+
+        self.matching_indices = list(range(self.number_of_agents))
+        self.payoffs = np.zeros(number_of_agents, dtype=float)
+
 
         # Data Recording
         self.avg_payoff_0_time_series = []
