@@ -1,5 +1,6 @@
 import numpy as np
 from numba import jit
+import csv
 
 @jit(nopython=True)
 def permute(matching, n):
@@ -10,11 +11,14 @@ def permute(matching, n):
         matching[j] = temp
 
 class Model:
-    def __init__(self, number_of_agents, R, S, T, P):
+    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out):
 
-        # 1 is cooperate
-        # 0 is defect
-        self.game = np.array([[P, T], [S, R]])
+        # 0 is cooperate
+        # 1 is defect
+
+        # stag hunt so payoff matrix for focal player and other player 
+        self.game_focal = np.array([[Rf, Sf], [Tf, Pf]])
+        self.game_other = np.array([[Ro, So], [To, Po]])
 
         # let us assume pops are even
         assert number_of_agents % 2 == 0
@@ -24,8 +28,8 @@ class Model:
 
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
-        self.ingroup = np.ones(number_of_agents, dtype=float)
-        self.outgroup = np.zeros(number_of_agents, dtype=float)
+        self.ingroup = np.full(number_of_agents, tag1_in)
+        self.outgroup = np.full(number_of_agents, tag1_out)
 
         self.matching_indices = list(range(self.number_of_agents))
 
@@ -33,7 +37,16 @@ class Model:
         self.payoffs = np.zeros(number_of_agents, dtype=float)
         for i in range(self.number_of_agents // 2):
             self.tags[i] = 0
+            self.ingroup[i] = tag0_in
+            self.outgroup[i] = tag0_out
 
+        # Data Recording
+        self.avg_payoff_0_time_series = []
+        self.avg_payoff_1_time_series = []
+        self.avg_ingroup_0_time_series = []
+        self.avg_ingroup_1_time_series = []
+        self.avg_outgroup_0_time_series = []
+        self.avg_outgroup_1_time_series = []
 
     def encounter(self, index_focal, index_other):
         assert 0 <= index_focal < self.number_of_agents
@@ -44,39 +57,39 @@ class Model:
             # ingroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
+            choice_0_value = np.dot(self.game_focal[0], np.array([self.ingroup[index_focal],
                                                             1.0 - self.ingroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
+            choice_1_value = np.dot(self.game_focal[1], np.array([self.ingroup[index_focal],
                                                             1.0 - self.ingroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
+            choice_0_value = np.dot(self.game_other[0], np.array([self.ingroup[index_other],
                                                             1.0 - self.ingroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
+            choice_1_value = np.dot(self.game_other[1], np.array([self.ingroup[index_other],
                                                             1.0 - self.ingroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
 
         else:
             # outgroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
+            choice_0_value = np.dot(self.game_focal[0], np.array([self.outgroup[index_focal],
                                                             1.0 - self.outgroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
+            choice_1_value = np.dot(self.game_focal[1], np.array([self.outgroup[index_focal],
                                                             1.0 - self.outgroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
+            choice_0_value = np.dot(self.game_other[0], np.array([self.outgroup[index_other],
                                                             1.0 - self.outgroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
+            choice_1_value = np.dot(self.game_other[1], np.array([self.outgroup[index_other],
                                                             1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
 
     def compute_payoff(self, samples):
         self.payoffs = np.zeros(self.number_of_agents)
@@ -88,6 +101,123 @@ class Model:
                 payoff_focal, payoff_other = self.encounter(focal_index, other_index)
                 self.payoffs[focal_index] = self.payoffs[focal_index]  + payoff_focal
                 self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
+        self.payoffs = self.payoffs/samples
 
+    def step(self, samples, selection_intensity, perturbation_probability=0.05, perturbation_scale=0.05, performance_independent=True):
+        # Compute the current payoff
+        self.compute_payoff(samples)
 
+        # Record the average payoff for each group
+        self.avg_payoff_0_time_series.append(np.sum(self.payoffs[0:self.number_of_agents // 2])/len(self.payoffs[0:self.number_of_agents // 2]))
+        self.avg_payoff_1_time_series.append(np.sum(self.payoffs[self.number_of_agents // 2:]/len(self.payoffs[self.number_of_agents // 2:])))
 
+        # Record average in/outgroup beliefs for each group
+        self.avg_ingroup_0_time_series.append(np.sum(self.ingroup[0:self.number_of_agents // 2])/len(self.ingroup[0:self.number_of_agents // 2]))
+        self.avg_ingroup_1_time_series.append(np.sum(self.ingroup[self.number_of_agents // 2:]/len(self.ingroup[self.number_of_agents // 2:])))
+
+        self.avg_outgroup_0_time_series.append(np.sum(self.outgroup[0:self.number_of_agents // 2])/len(self.outgroup[0:self.number_of_agents // 2]))
+        self.avg_outgroup_1_time_series.append(np.sum(self.outgroup[self.number_of_agents // 2:]/len(self.outgroup[self.number_of_agents // 2:])))
+
+        # Find the fitness probability distribution (using exponential selection intensity) for each group
+        payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_agents // 2]))
+        payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_agents // 2:]))
+
+        fitness_probabilities_0 = np.exp(selection_intensity*self.payoffs[0:self.number_of_agents//2])/payoff_sum_0
+        fitness_probabilities_1 = np.exp(selection_intensity*self.payoffs[self.number_of_agents//2:])/payoff_sum_1
+
+        new_ingroup = []
+        new_outgroup = []
+        new_payoffs = []
+        
+        # Create a new generation of agents.  Sampling occurs within group only, to maintain group balance.
+        for i in range(self.number_of_agents):
+            if i < self.number_of_agents//2:
+                current_agent = np.random.choice(range(self.number_of_agents// 2), p = fitness_probabilities_0)
+            else:
+                current_agent = np.random.choice(range(self.number_of_agents// 2, self.number_of_agents), p = fitness_probabilities_1)
+            
+            # If performance independent belief perturbation is required, do so
+            if performance_independent:
+                if np.random.rand() <= perturbation_probability:
+                    delta_in = np.random.normal(0.0,perturbation_scale)
+                    while self.ingroup[current_agent] + delta_in < 0 or self.ingroup[current_agent] + delta_in >1:
+                        delta_in = np.random.normal(0.0,perturbation_scale)
+                    
+                    delta_out = np.random.normal(0.0,perturbation_scale)
+                    while self.outgroup[current_agent] + delta_out < 0 or self.outgroup[current_agent] + delta_out >1:
+                        delta_out = np.random.normal(0.0,perturbation_scale)
+                else:
+                    delta_in = 0
+                    delta_out = 0
+
+                new_ingroup.append(self.ingroup[current_agent] + delta_in)
+                new_outgroup.append(self.outgroup[current_agent] + delta_out)
+            # Else just add the new agent, perturbations is completed by below
+            else:
+                new_ingroup.append(self.ingroup[current_agent])
+                new_outgroup.append(self.outgroup[current_agent])
+            
+            new_payoffs.append(self.payoffs[current_agent])
+        
+        self.ingroup = np.array(new_ingroup)
+        self.outgroup = np.array(new_outgroup)
+        self.payoffs = np.array(new_payoffs)
+
+        # If performance dependent perturbation is required, do so.
+        if not performance_independent:
+            # Compute fitness array
+            total_payoffs_sum = np.sum(np.exp(selection_intensity*self.payoffs))
+            self.fitness = np.exp(selection_intensity*self.payoffs)/total_payoffs_sum
+            
+            # Work out the 25% and 75% percentiles of fitnesses
+            p_25 = np.percentile(self.fitness, 25)
+            p_75 = np.percentile(self.fitness, 75)
+
+            # Update agents beliefs/strategies
+            for i in range(self.number_of_agents):
+
+                if self.fitness[i] < p_25:
+                # Agent is in the bottom 25% so update their ingroup and outgroup strategies by sampling 
+                # from a Gaussian distribution with mean of the agent's current theta and standard deviation of 5%
+                    current_ingroup_strategy = self.ingroup[i]
+                    s = -1
+                    while 0 > s or s > 1:
+                        s = np.random.normal(current_ingroup_strategy, 0.05, 1)
+                    self.ingroup[i] = s
+                    current_outgroup_strategy = self.outgroup[i]
+                    s = -1
+                    while 0 > s or s > 1:
+                        s = np.random.normal(current_outgroup_strategy, 0.05, 1)
+                    self.outgroup[i] = s
+
+                if p_25 <= self.fitness[i] <= p_75:
+                # Agent is in the middle 50% so update their ingroup and outgroup strategies by sampling 
+                # from a Gaussian distribution with mean of the agent's current theta and standard deviation of 2.5%
+                    current_ingroup_strategy = self.ingroup[i]
+                    s = -1
+                    while 0 > s or s > 1:
+                        s = np.random.normal(current_ingroup_strategy, 0.025, 1)
+                    self.ingroup[i] = s
+                    current_outgroup_strategy = self.outgroup[i]
+                    s = -1
+                    while 0 > s or s > 1:
+                        s = np.random.normal(current_outgroup_strategy, 0.025, 1)
+                    self.outgroup[i] = s
+
+                # Agent is in the top 25% so do not update their strategies/beliefs
+        
+    def run_simulation(self, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False, performance_independent=True, data_file_name='data.csv'):
+        if data_recording:
+            with open('data/' + data_file_name, 'w', newline='\n') as out_file:
+                writer = csv.writer(out_file)
+                for _ in range(number_of_steps):
+                    self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
+                    writer.writerow(self.payoffs)
+        else:
+            for _ in range(number_of_steps):
+                    self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
+    
+
+def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
+    model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out)
+    model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
