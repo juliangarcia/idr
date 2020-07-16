@@ -109,8 +109,6 @@ class Model:
         # Compute the current payoff
         self.compute_payoff(samples)
 
-        self.record_data()
-
         # Find the fitness probability distribution (using exponential selection intensity) for each group
         payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_0_tags]))
         payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_0_tags:]))
@@ -162,13 +160,14 @@ class Model:
     def run_simulation(self, random_seed, number_of_steps, rounds_per_step,
                        selection_intensity, perturbation_probability,
                        perturbation_scale, data_recording,
-                       data_file_path_payoffs, data_file_path_ingroup, data_file_path_outgroup):
+                       data_file_path_payoffs, data_file_path_ingroup,
+                       data_file_path_outgroup):
 
-        random.seed(random_seed)
+        np.random.seed(random_seed)
 
         if data_recording:
-            with open(data_file_path_payoffs, 'w', newline='\n') as f, 
-                 open(data_file_path_ingroup, 'w', newline='\n') as g,
+            with open(data_file_path_payoffs, 'w', newline='\n') as f, \
+                 open(data_file_path_ingroup, 'w', newline='\n') as g, \
                  open(data_file_path_outgroup, 'w', newline='\n') as h:
                 writer1 = csv.writer(f)
                 writer2 = csv.writer(g)
