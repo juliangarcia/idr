@@ -48,14 +48,6 @@ class Model:
         self.matching_indices = list(range(self.number_of_agents))
         self.payoffs = np.zeros(number_of_agents, dtype=float)
 
-        # Data Recording
-        self.avg_payoff_0_time_series = []
-        self.avg_payoff_1_time_series = []
-        self.avg_ingroup_0_time_series = []
-        self.avg_ingroup_1_time_series = []
-        self.avg_outgroup_0_time_series = []
-        self.avg_outgroup_1_time_series = []
-
     def encounter(self, index_focal, index_other):
         assert 0 <= index_focal < self.number_of_agents
         assert 0 <= index_other < self.number_of_agents
@@ -110,24 +102,6 @@ class Model:
                 self.payoffs[focal_index] = self.payoffs[focal_index] + payoff_focal
                 self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
         self.payoffs = self.payoffs/samples
-
-    def record_data(self):
-        # Record the average payoff for each group
-        self.avg_payoff_0_time_series.append(
-            np.sum(self.payoffs[0:self.number_of_0_tags]) / len(self.payoffs[0:self.number_of_0_tags]))
-        self.avg_payoff_1_time_series.append(
-            np.sum(self.payoffs[self.number_of_0_tags:] / len(self.payoffs[self.number_of_0_tags:])))
-
-        # Record average in/outgroup beliefs for each group
-        self.avg_ingroup_0_time_series.append(
-            np.sum(self.ingroup[0:self.number_of_0_tags]) / len(self.ingroup[0:self.number_of_0_tags]))
-        self.avg_ingroup_1_time_series.append(
-            np.sum(self.ingroup[self.number_of_0_tags:] / len(self.ingroup[self.number_of_0_tags:])))
-
-        self.avg_outgroup_0_time_series.append(
-            np.sum(self.outgroup[0:self.number_of_0_tags]) / len(self.outgroup[0:self.number_of_0_tags]))
-        self.avg_outgroup_1_time_series.append(
-            np.sum(self.outgroup[self.number_of_0_tags:] / len(self.outgroup[self.number_of_0_tags:])))
 
     def step(self, samples, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
@@ -185,17 +159,27 @@ class Model:
         self.outgroup = np.array(new_outgroup)
         self.payoffs = np.array(new_payoffs)
 
-    def run_simulation(self, number_of_steps, rounds_per_step,
+    def run_simulation(self, random_seed, number_of_steps, rounds_per_step,
                        selection_intensity, perturbation_probability,
                        perturbation_scale, data_recording,
-                       data_file_path):
+                       data_file_path_payoffs, data_file_path_ingroup, data_file_path_outgroup):
+
+        random.seed(random_seed)
+
         if data_recording:
-            with open(data_file_path, 'w', newline='\n') as out_file:
-                writer = csv.writer(out_file)
+            with open(data_file_path_payoffs, 'w', newline='\n') as f, 
+                 open(data_file_path_ingroup, 'w', newline='\n') as g,
+                 open(data_file_path_outgroup, 'w', newline='\n') as h:
+                writer1 = csv.writer(f)
+                writer2 = csv.writer(g)
+                writer3 = csv.writer(h)
                 for _ in range(number_of_steps):
                     self.step(rounds_per_step, selection_intensity,
                               perturbation_probability, perturbation_scale)
-                    writer.writerow(self.payoffs)
+                    writer1.writerow(self.payoffs)
+                    writer2.writerow(self.ingroup)
+                    writer3.writerow(self.outgroup)
+
         else:
             for _ in range(number_of_steps):
                 self.step(rounds_per_step, selection_intensity,
