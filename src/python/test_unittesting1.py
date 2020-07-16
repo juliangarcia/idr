@@ -50,3 +50,10 @@ def test_step():
 
         assert np.amax(model.outgroup) <= 1.0
         assert np.amin(model.outgroup) >= 0.0
+
+def test_encounter():
+	# for a symmetric game, the payoff for each player should be the same
+	model = Model(10, -1, -3, 0, -2, 1, 0, 1, 0, 5)
+	for i in range(model.number_of_agents-1):
+		payoff_i, payoff_j = model.encounter(i,i+1)
+		assert payoff_i == payoff_j
