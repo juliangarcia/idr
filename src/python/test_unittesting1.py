@@ -38,5 +38,15 @@ def test_step():
         model = Model(10, -1, -3, 0, -2, 1, 0, 1, 0, i)
         for _ in range(10):
             model.step(10, 0.1)
-            assert np.count_nonzero(model.tags==0) == i
-            assert np.count_nonzero(model.tags==1) == 10-i
+            assert np.count_nonzero(model.tags == 0) == i
+            assert np.count_nonzero(model.tags == 1) == 10-i
+
+    # Test that agents beliefs are constrained in [0,1]
+    model = Model(10, -1, -3, 0, -2, 1, 0, 1, 0, 5)
+    for _ in range(10):
+        model.step(10, 0.1)
+        assert np.amax(model.ingroup) <= 1.0
+        assert np.amin(model.ingroup) >= 0.0
+
+        assert np.amax(model.outgroup) <= 1.0
+        assert np.amin(model.outgroup) >= 0.0
