@@ -15,7 +15,8 @@ def permute(matching, n):
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
-                 tag1_initial_ingroup_belief, tag1_initial_outgroup_belief):
+                 tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
+                 initial_number_of_0_tags):
 
         # 0 is cooperate
         # 1 is defect
@@ -29,6 +30,8 @@ class Model:
         # could there be a loners option? non-interaction seems relevant
         self.number_of_agents = number_of_agents
 
+        self.number_of_0_tags = initial_number_of_0_tags
+
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
 
@@ -36,7 +39,7 @@ class Model:
         self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief, dtype=float)
         self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief, dtype=float)
 
-        for i in range(self.number_of_agents // 2):
+        for i in range(self.number_of_0_tags):
             self.tags[i] = 0
             self.ingroup[i] = tag0_initial_ingroup_belief
             self.outgroup[i] = tag0_initial_outgroup_belief
@@ -110,20 +113,20 @@ class Model:
     def record_data(self):
         # Record the average payoff for each group
         self.avg_payoff_0_time_series.append(
-            np.sum(self.payoffs[0:self.number_of_agents // 2]) / len(self.payoffs[0:self.number_of_agents // 2]))
+            np.sum(self.payoffs[0:self.number_of_0_tags]) / len(self.payoffs[0:self.number_of_0_tags]))
         self.avg_payoff_1_time_series.append(
-            np.sum(self.payoffs[self.number_of_agents // 2:] / len(self.payoffs[self.number_of_agents // 2:])))
+            np.sum(self.payoffs[self.number_of_0_tags:] / len(self.payoffs[self.number_of_0_tags:])))
 
         # Record average in/outgroup beliefs for each group
         self.avg_ingroup_0_time_series.append(
-            np.sum(self.ingroup[0:self.number_of_agents // 2]) / len(self.ingroup[0:self.number_of_agents // 2]))
+            np.sum(self.ingroup[0:self.number_of_0_tags]) / len(self.ingroup[0:self.number_of_0_tags]))
         self.avg_ingroup_1_time_series.append(
-            np.sum(self.ingroup[self.number_of_agents // 2:] / len(self.ingroup[self.number_of_agents // 2:])))
+            np.sum(self.ingroup[self.number_of_0_tags:] / len(self.ingroup[self.number_of_0_tags:])))
 
         self.avg_outgroup_0_time_series.append(
-            np.sum(self.outgroup[0:self.number_of_agents // 2]) / len(self.outgroup[0:self.number_of_agents // 2]))
+            np.sum(self.outgroup[0:self.number_of_0_tags]) / len(self.outgroup[0:self.number_of_0_tags]))
         self.avg_outgroup_1_time_series.append(
-            np.sum(self.outgroup[self.number_of_agents // 2:] / len(self.outgroup[self.number_of_agents // 2:])))
+            np.sum(self.outgroup[self.number_of_0_tags:] / len(self.outgroup[self.number_of_0_tags:])))
 
     def step(self, samples, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
@@ -134,11 +137,11 @@ class Model:
         self.record_data()
 
         # Find the fitness probability distribution (using exponential selection intensity) for each group
-        payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_agents // 2]))
-        payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_agents // 2:]))
+        payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:self.number_of_0_tags]))
+        payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[self.number_of_0_tags:]))
 
-        fitness_probabilities_0 = np.exp(selection_intensity*self.payoffs[0:self.number_of_agents//2])/payoff_sum_0
-        fitness_probabilities_1 = np.exp(selection_intensity*self.payoffs[self.number_of_agents//2:])/payoff_sum_1
+        fitness_probabilities_0 = np.exp(selection_intensity*self.payoffs[0:self.number_of_0_tags])/payoff_sum_0
+        fitness_probabilities_1 = np.exp(selection_intensity*self.payoffs[self.number_of_0_tags:])/payoff_sum_1
 
         new_ingroup = []
         new_outgroup = []
@@ -147,13 +150,13 @@ class Model:
         # Create a new generation of agents.  Sampling occurs within
         # group only, to maintain group balance.
         for i in range(self.number_of_agents):
-            if i < self.number_of_agents//2:
-                current_agent = np.random.choice(range(self.number_of_agents // 2),
+            if i < self.number_of_0_tags:
+                current_agent = np.random.choice(range(self.number_of_0_tags),
                                                  p=fitness_probabilities_0)
             else:
-                current_agent = np.random.choice(range(self.number_of_agents // 2, self.number_of_agents),
+                current_agent = np.random.choice(range(self.number_of_0_tags, self.number_of_agents),
                                                  p=fitness_probabilities_1)
-    
+
             # Perturb agents belief
             if np.random.rand() <= perturbation_probability:
                 current_agent_new_ingroup = np.random.normal(
@@ -193,6 +196,6 @@ class Model:
                 self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale)
 
 
-def main(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
-    model = Model(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out)
+def main(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, number_of_0_tags, data_recording=False):
+    model = Model(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_0_tags)
     model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
