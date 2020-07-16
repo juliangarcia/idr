@@ -13,16 +13,16 @@ def permute(matching, n):
 
 
 class Model:
-    def __init__(self, number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po,
+    def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief):
 
         # 0 is cooperate
         # 1 is defect
 
-        # stag hunt so payoff matrix for focal player and other player 
-        self.game_focal = np.array([[Rf, Sf], [Tf, Pf]])
-        self.game_other = np.array([[Ro, So], [To, Po]])
+        # Game payoff matrix
+        self.game = np.array([[R, S], [T, P]])
+
 
         # let us assume pops are even
         assert number_of_agents % 2 == 0
@@ -62,39 +62,39 @@ class Model:
             # ingroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game_focal[0], np.array([self.ingroup[index_focal],
+            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
                                                                   1.0 - self.ingroup[index_focal]]))
-            choice_1_value = np.dot(self.game_focal[1], np.array([self.ingroup[index_focal],
+            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
                                                                   1.0 - self.ingroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game_other[0], np.array([self.ingroup[index_other],
+            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
                                                                   1.0 - self.ingroup[index_other]]))
-            choice_1_value = np.dot(self.game_other[1], np.array([self.ingroup[index_other],
+            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
                                                                   1.0 - self.ingroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
+            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
         else:
             # outgroup interaction
 
             # choice focal
-            choice_0_value = np.dot(self.game_focal[0], np.array([self.outgroup[index_focal],
+            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
                                                                   1.0 - self.outgroup[index_focal]]))
-            choice_1_value = np.dot(self.game_focal[1], np.array([self.outgroup[index_focal],
+            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
                                                                   1.0 - self.outgroup[index_focal]]))
             choice_focal = 0 if choice_0_value > choice_1_value else 1
 
             # choice other
-            choice_0_value = np.dot(self.game_other[0], np.array([self.outgroup[index_other],
+            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
                                                                   1.0 - self.outgroup[index_other]]))
-            choice_1_value = np.dot(self.game_other[1], np.array([self.outgroup[index_other],
+            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
                                                                   1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game_focal[choice_focal, choice_other], self.game_other[choice_other, choice_focal]
+            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
     def compute_payoff(self, samples):
         self.payoffs = np.zeros(self.number_of_agents)
