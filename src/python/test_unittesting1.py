@@ -52,8 +52,47 @@ def test_step():
         assert np.amin(model.outgroup) >= 0.0
 
 def test_encounter():
+<<<<<<< HEAD
 	# for a symmetric game, the payoff for each player should be the same
 	model = Model(10, -1, -3, 0, -2, 1, 0, 1, 0, 5)
 	for i in range(model.number_of_agents-1):
 		payoff_i, payoff_j = model.encounter(i,i+1)
 		assert payoff_i == payoff_j
+=======
+    # Test on some simple cases
+    
+    model = Model(4, 4, 1, 3, 2, 1, 0, 1, 0, 2)
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interation
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
+
+    model = Model(4, 4, 1, 3, 2, 0.8, 0.2, 0.8, 0.2, 2)
+
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
+
+    model = Model(4, 4, 1, 3, 2, 0.8, 0.5, 0.8, 0.5, 2)
+
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
+>>>>>>> 1cf305cf9e2badb33b9d03670f3bfad3d9991df3
