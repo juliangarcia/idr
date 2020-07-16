@@ -50,3 +50,41 @@ def test_step():
 
         assert np.amax(model.outgroup) <= 1.0
         assert np.amin(model.outgroup) >= 0.0
+
+def test_encounter():
+    # Test on some simple cases
+    
+    model = Model(4, 4, 1, 3, 2, 1, 0, 1, 0, 2)
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interation
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
+
+    model = Model(4, 4, 1, 3, 2, 0.8, 0.2, 0.8, 0.2, 2)
+
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
+
+    model = Model(4, 4, 1, 3, 2, 0.8, 0.5, 0.8, 0.5, 2)
+
+    # Outgroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 3)
+    assert payoff_focal == 2
+    assert payoff_other == 2
+
+    # Ingroup interaction
+    payoff_focal, payoff_other = model.encounter(0, 1)
+    assert payoff_focal == 4
+    assert payoff_other == 4
