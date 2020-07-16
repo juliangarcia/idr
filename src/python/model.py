@@ -1,6 +1,7 @@
 import numpy as np
 from numba import jit
 import csv
+import json
 
 
 @jit(nopython=True)
@@ -184,18 +185,25 @@ class Model:
         self.outgroup = np.array(new_outgroup)
         self.payoffs = np.array(new_payoffs)
 
-    def run_simulation(self, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False, data_file_name='data.csv'):
+    def run_simulation(self, number_of_steps, rounds_per_step,
+                       selection_intensity, perturbation_probability,
+                       perturbation_scale, data_recording,
+                       data_file_path):
         if data_recording:
-            with open('data/' + data_file_name, 'w', newline='\n') as out_file:
+            with open(data_file_path, 'w', newline='\n') as out_file:
                 writer = csv.writer(out_file)
                 for _ in range(number_of_steps):
-                    self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale)
+                    self.step(rounds_per_step, selection_intensity,
+                              perturbation_probability, perturbation_scale)
                     writer.writerow(self.payoffs)
         else:
             for _ in range(number_of_steps):
-                self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale)
+                self.step(rounds_per_step, selection_intensity,
+                          perturbation_probability, perturbation_scale)
 
 
-def main(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, number_of_0_tags, data_recording=False):
-    model = Model(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_0_tags)
-    model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
+def main(config_file_path):
+    with open(config_file_path, 'r') as config_file:
+        config = json.load(config_file)
+    model = Model(**config["model_initialisation"])
+    model.run_simulation(**config["simulation_settings"])
