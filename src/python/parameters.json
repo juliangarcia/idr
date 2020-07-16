@@ -1,4 +1,4 @@
-{
+data_dictionary = {
     "number_of_agents": "10",
     "R": "-1",
     "S": "-3",
