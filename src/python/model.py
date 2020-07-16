@@ -234,7 +234,7 @@ class Model:
                 self.step(rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, performance_independent)
 
 
-def main(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
-    model = Model(number_of_agents, Rf, Sf, Tf, Pf, Ro, So, To, Po, tag0_in, tag0_out, tag1_in, tag1_out)
+def main(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out, number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording=False):
+    model = Model(number_of_agents, R, S, T, P, tag0_in, tag0_out, tag1_in, tag1_out)
     model.run_simulation(number_of_steps, rounds_per_step, selection_intensity, perturbation_probability, perturbation_scale, data_recording, False)
 
