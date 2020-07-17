@@ -184,11 +184,9 @@ class Model:
                 self.step(rounds_per_step, selection_intensity,
                           perturbation_probability, perturbation_scale)
 
-    def run_monte_carlo_simulation(self, random_seed, number_of_steps, rounds_per_step,
+    def run_monte_carlo_simulation(self, number_of_steps, rounds_per_step,
                        selection_intensity, perturbation_probability,
-                       perturbation_scale, data_recording,
-                       data_file_path_payoffs, data_file_path_ingroup,
-                       data_file_path_outgroup):
+                       perturbation_scale):
 
         payoffs = []
         payoffs_tag0 = []
@@ -213,7 +211,7 @@ class Model:
             outgroup_tag0.append(np.sum(self.outgroup[:self.number_of_0_tags])/self.number_of_0_tags)
             outgroup_tag1.append(np.sum(self.outgroup[self.number_of_0_tags:])/(self.number_of_agents-self.number_of_0_tags))
 
-        return payoffs, payoffs_tag0, payoffs_tag1, ingroup, ingroup_tag0, ingroup_tag1, outgroup, outgroup_tag0, outgroup_tag1
+        return np.array(payoffs), np.array(payoffs_tag0), np.array(payoffs_tag1), np.array(ingroup), np.array(ingroup_tag0), np.array(ingroup_tag1), np.array(outgroup), np.array(outgroup_tag0), np.array(outgroup_tag1)
 
      
 
