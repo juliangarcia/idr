@@ -190,8 +190,6 @@ class Model:
                        data_file_path_payoffs, data_file_path_ingroup,
                        data_file_path_outgroup):
 
-        np.random.seed(random_seed)
-
         payoffs = []
         payoffs_tag0 = []
         payoffs_tag1 = []
