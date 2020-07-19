@@ -13,14 +13,13 @@
     },
     "simulation_settings": {
         "random_seed": 12345,
-        "number_of_steps": 1000,
+        "number_of_steps": 10000,
         "rounds_per_step": 100,
         "selection_intensity": 0.1,
         "perturbation_probability": 0.1,
         "perturbation_scale": 0.05,
-        "data_recording": false,
-        "data_file_path_payoffs": "data/data_payoffs.csv",
-        "data_file_path_ingroup": "data/data_ingroup.csv", 
-        "data_file_path_outgroup": "data/data_outgroup.csv"
+        "data_recording": true,
+        "data_file_path": "data.csv",
+        "write_frequency": 10
     }
 }

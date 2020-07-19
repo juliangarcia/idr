@@ -160,60 +160,28 @@ class Model:
     def run_simulation(self, random_seed, number_of_steps, rounds_per_step,
                        selection_intensity, perturbation_probability,
                        perturbation_scale, data_recording,
-                       data_file_path_payoffs, data_file_path_ingroup,
-                       data_file_path_outgroup):
+                       data_file_path, write_frequency):
 
         np.random.seed(random_seed)
 
         if data_recording:
-            with open(data_file_path_payoffs, 'w', newline='\n') as f, \
-                 open(data_file_path_ingroup, 'w', newline='\n') as g, \
-                 open(data_file_path_outgroup, 'w', newline='\n') as h:
-                writer1 = csv.writer(f)
-                writer2 = csv.writer(g)
-                writer3 = csv.writer(h)
-                for _ in range(number_of_steps):
-                    self.step(rounds_per_step, selection_intensity,
-                              perturbation_probability, perturbation_scale)
-                    writer1.writerow(self.payoffs)
-                    writer2.writerow(self.ingroup)
-                    writer3.writerow(self.outgroup)
+            for current_step in range(number_of_steps):
+                self.step(rounds_per_step, selection_intensity,
+                          perturbation_probability, perturbation_scale)
 
+                if current_step % write_frequency == 0 \
+                        or current_step == number_of_steps - 1:
+                    with open(data_file_path, 'a', newline='\n') as output_file:
+                        writer = csv.writer(output_file)
+                        writer.writerow(self.payoffs)
+                        writer.writerow(self.ingroup)
+                        writer.writerow(self.outgroup)
         else:
             for _ in range(number_of_steps):
                 self.step(rounds_per_step, selection_intensity,
                           perturbation_probability, perturbation_scale)
 
-    def run_monte_carlo_simulation(self, number_of_steps, rounds_per_step,
-                       selection_intensity, perturbation_probability,
-                       perturbation_scale):
 
-        payoffs = []
-        payoffs_tag0 = []
-        payoffs_tag1 = []
-        ingroup = []
-        ingroup_tag0 = []
-        ingroup_tag1 = []
-        outgroup = []
-        outgroup_tag0 = []
-        outgroup_tag1 = []
-
-        for _ in range(number_of_steps):
-            self.step(rounds_per_step, selection_intensity,
-                      perturbation_probability, perturbation_scale)
-            payoffs.append(np.sum(self.payoffs)/self.number_of_agents)
-            payoffs_tag0.append(np.sum(self.payoffs[:self.number_of_0_tags])/self.number_of_0_tags)
-            payoffs_tag1.append(np.sum(self.payoffs[self.number_of_0_tags:])/(self.number_of_agents-self.number_of_0_tags))
-            ingroup.append(np.sum(self.ingroup)/self.number_of_agents)
-            ingroup_tag0.append(np.sum(self.ingroup[:self.number_of_0_tags])/self.number_of_0_tags)
-            ingroup_tag1.append(np.sum(self.ingroup[self.number_of_0_tags:])/(self.number_of_agents-self.number_of_0_tags))
-            outgroup.append(np.sum(self.outgroup)/self.number_of_agents)
-            outgroup_tag0.append(np.sum(self.outgroup[:self.number_of_0_tags])/self.number_of_0_tags)
-            outgroup_tag1.append(np.sum(self.outgroup[self.number_of_0_tags:])/(self.number_of_agents-self.number_of_0_tags))
-
-        return np.array(payoffs), np.array(payoffs_tag0), np.array(payoffs_tag1), np.array(ingroup), np.array(ingroup_tag0), np.array(ingroup_tag1), np.array(outgroup), np.array(outgroup_tag0), np.array(outgroup_tag1)
-
-     
 
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
