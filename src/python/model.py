@@ -175,23 +175,24 @@ class Model:
                         writer = csv.writer(output_file)
                         writer.writerow(np.append(self.payoffs,
                                                   np.append(self.ingroup,
-                                                             self.outgroup)))
+                                                            self.outgroup)))
         else:
             for _ in range(number_of_steps):
                 self.step(rounds_per_step, selection_intensity,
                           perturbation_probability, perturbation_scale)
 
+
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
     model = Model(config["number_of_agents"],
-                 config["R"], config["S"],
-                 config["T"], config["P"],
-                 config["tag0_initial_ingroup_belief"],
-                 config["tag0_initial_outgroup_belief"],
-                 config["tag1_initial_ingroup_belief"],
-                 config["tag1_initial_outgroup_belief"],
-                 config["initial_number_of_0_tags"])
+                  config["R"], config["S"],
+                  config["T"], config["P"],
+                  config["tag0_initial_ingroup_belief"],
+                  config["tag0_initial_outgroup_belief"],
+                  config["tag1_initial_ingroup_belief"],
+                  config["tag1_initial_outgroup_belief"],
+                  config["initial_number_of_0_tags"])
     model.run_simulation(config["random_seed"], config["number_of_steps"],
                          config["rounds_per_step"],
                          config["selection_intensity"],
