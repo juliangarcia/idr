@@ -2,6 +2,7 @@ import numpy as np
 from numba import jit
 import csv
 import json
+import sys
 
 
 @jit(nopython=True)
@@ -200,9 +201,6 @@ def main(config_file_path):
                          config["perturbation_scale"], config["data_recording"],
                          config["data_file_path"], config["write_frequency"])
 
-# def main(config_file_path):
-#     with open(config_file_path, 'r') as config_file:
-#         config = json.load(config_file)
 
-#     model = Model(**config["model_initialisation"])
-#     model.run_simulation(**config["simulation_settings"])
+if __name__ == "__main__":
+    main(sys.argv[1])
