@@ -3,7 +3,8 @@ from numba import jit
 import csv
 import json
 import sys
-
+import networkx as nx
+import matplotlib.pyplot as plt
 
 @jit(nopython=True)
 def permute(matching, n):
@@ -48,6 +49,15 @@ class Model:
 
         self.matching_indices = list(range(self.number_of_agents))
         self.payoffs = np.zeros(number_of_agents, dtype=float)
+
+        # Create graph
+        self.graph = nx.generators.random_graphs.barabasi_albert_graph(
+            number_of_agents, 5).to_directed()
+
+
+    def draw_graph(self):
+        nx.draw(self.graph, with_labels=True)
+        plt.show()
 
     def encounter(self, index_focal, index_other):
         assert 0 <= index_focal < self.number_of_agents
@@ -94,14 +104,23 @@ class Model:
 
     def compute_payoff(self, samples):
         self.payoffs = np.zeros(self.number_of_agents)
+
         for _ in range(samples):
+            game_played = [False for _ in range(self.number_of_agents)]
             permute(self.matching_indices, self.number_of_agents)
-            for i in range(0, self.number_of_agents, 2):
-                focal_index = self.matching_indices[i]
-                other_index = self.matching_indices[i + 1]
-                payoff_focal, payoff_other = self.encounter(focal_index, other_index)
-                self.payoffs[focal_index] = self.payoffs[focal_index] + payoff_focal
-                self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
+            for focal_index in self.matching_indices:
+                viable_neighbours = [nbr for nbr in \
+                    self.graph.adj[focal_index].keys() if not game_played[nbr]]
+                if len(viable_neighbours) > 0:
+                    other_index = np.random.choice(viable_neighbours)
+                    game_played[other_index] = True
+                    game_played[focal_index] = True
+                    payoff_focal, payoff_other = self.encounter(focal_index,
+                                                                other_index)
+                    self.payoffs[focal_index] = self.payoffs[focal_index] + \
+                        payoff_focal
+                    self.payoffs[other_index] = self.payoffs[other_index] + \
+                        payoff_other
         self.payoffs = self.payoffs/samples
 
     def step(self, samples, selection_intensity, perturbation_probability=0.05,
