@@ -173,9 +173,9 @@ class Model:
                         or current_step == number_of_steps - 1:
                     with open(data_file_path, 'a', newline='\n') as output_file:
                         writer = csv.writer(output_file)
-                        writer.writerow(self.payoffs)
-                        writer.writerow(self.ingroup)
-                        writer.writerow(self.outgroup)
+                        writer.writerow(np.append(self.payoffs,
+                                                  np.append(self.ingroup,
+                                                             self.outgroup)))
         else:
             for _ in range(number_of_steps):
                 self.step(rounds_per_step, selection_intensity,
@@ -186,5 +186,6 @@ class Model:
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
+    
     model = Model(**config["model_initialisation"])
     model.run_simulation(**config["simulation_settings"])
