@@ -109,12 +109,14 @@ class Model:
             game_played = [False for _ in range(self.number_of_agents)]
             permute(self.matching_indices, self.number_of_agents)
             for focal_index in self.matching_indices:
+                if game_played[focal_index]:
+                    continue
                 viable_neighbours = [nbr for nbr in \
                     self.graph.adj[focal_index].keys() if not game_played[nbr]]
                 if len(viable_neighbours) > 0:
                     other_index = np.random.choice(viable_neighbours)
-                    game_played[other_index] = True
                     game_played[focal_index] = True
+                    game_played[other_index] = True
                     payoff_focal, payoff_other = self.encounter(focal_index,
                                                                 other_index)
                     self.payoffs[focal_index] = self.payoffs[focal_index] + \
