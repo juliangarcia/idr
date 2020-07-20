@@ -166,18 +166,17 @@ class Model:
         np.random.seed(random_seed)
 
         if data_recording:
-            with open(data_file_path, 'w', newline='\n') as output_file:
-                writer = csv.writer(output_file)
+            for current_step in range(number_of_steps):
+                self.step(rounds_per_step, selection_intensity,
+                          perturbation_probability, perturbation_scale)
 
-                for current_step in range(number_of_steps):
-                    self.step(rounds_per_step, selection_intensity,
-                            perturbation_probability, perturbation_scale)
-
-                    if current_step % write_frequency == 0 \
-                            or current_step == number_of_steps - 1:
-                            writer.writerow(np.append(self.payoffs,
-                                                    np.append(self.ingroup,
-                                                                self.outgroup)))
+                if current_step % write_frequency == 0 \
+                        or current_step == number_of_steps - 1:
+                    with open(data_file_path, 'a', newline='\n') as output_file:
+                        writer = csv.writer(output_file)
+                        writer.writerow(np.append(self.payoffs,
+                                                  np.append(self.ingroup,
+                                                            self.outgroup)))
         else:
             for _ in range(number_of_steps):
                 self.step(rounds_per_step, selection_intensity,
