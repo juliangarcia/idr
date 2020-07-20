@@ -1,0 +1,21 @@
+{
+    "number_of_agents": 100,
+    "R": 4,
+    "S": 1,
+    "T": 5,
+    "P": 2,
+    "tag0_initial_ingroup_belief": 0.9,
+    "tag0_initial_outgroup_belief": 0.9,
+    "tag1_initial_ingroup_belief": 0.9,
+    "tag1_initial_outgroup_belief": 0.9,
+    "initial_number_of_0_tags": 50,
+    "random_seed": 669593705,
+    "number_of_steps": 100000,
+    "rounds_per_step": 30,
+    "selection_intensity": 1.0,
+    "perturbation_probability": 0.01,
+    "perturbation_scale": 0.05,
+    "data_recording": true,
+    "data_file_path": "first_batch_game_PD_seed_669593705.csv",
+    "write_frequency": 100
+}
