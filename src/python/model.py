@@ -181,11 +181,27 @@ class Model:
                 self.step(rounds_per_step, selection_intensity,
                           perturbation_probability, perturbation_scale)
 
-
-
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
-    
-    model = Model(**config["model_initialisation"])
-    model.run_simulation(**config["simulation_settings"])
+    model = Model(config["number_of_agents"],
+                 config["R"], config["S"],
+                 config["T"], config["P"],
+                 config["tag0_initial_ingroup_belief"],
+                 config["tag0_initial_outgroup_belief"],
+                 config["tag1_initial_ingroup_belief"],
+                 config["tag1_initial_outgroup_belief"],
+                 config["initial_number_of_0_tags"])
+    model.run_simulation(config["random_seed"], config["number_of_steps"],
+                         config["rounds_per_step"],
+                         config["selection_intensity"],
+                         config["perturbation_probability"],
+                         config["perturbation_scale"], config["data_recording"],
+                         config["data_file_path"], config["write_frequency"])
+
+# def main(config_file_path):
+#     with open(config_file_path, 'r') as config_file:
+#         config = json.load(config_file)
+
+#     model = Model(**config["model_initialisation"])
+#     model.run_simulation(**config["simulation_settings"])
