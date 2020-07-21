@@ -18,5 +18,5 @@
     "data_recording": true,
     "data_file_path": "data.csv",
     "write_frequency": 10,
-    "graph_file_path": "test.json"
+    "graph_file_path": "graph.json"
 }
