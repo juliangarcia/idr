@@ -19,7 +19,7 @@ class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags):
+                 initial_number_of_0_tags, graph):
 
         # 0 is cooperate
         # 1 is defect
@@ -51,8 +51,7 @@ class Model:
         self.payoffs = np.zeros(number_of_agents, dtype=float)
 
         # Create graph
-        self.graph = nx.generators.random_graphs.barabasi_albert_graph(
-            number_of_agents, 5)
+        self.graph = graph
 
     def draw_graph(self):
         nx.draw(self.graph, with_labels=True)
@@ -204,6 +203,8 @@ class Model:
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
+    with open(config["graph_file_path"]) as graph_file:
+        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
     model = Model(config["number_of_agents"],
                   config["R"], config["S"],
                   config["T"], config["P"],
@@ -211,7 +212,8 @@ def main(config_file_path):
                   config["tag0_initial_outgroup_belief"],
                   config["tag1_initial_ingroup_belief"],
                   config["tag1_initial_outgroup_belief"],
-                  config["initial_number_of_0_tags"])
+                  config["initial_number_of_0_tags"],
+                  graph)
     model.run_simulation(config["random_seed"], config["number_of_steps"],
                          config["rounds_per_step"],
                          config["selection_intensity"],
