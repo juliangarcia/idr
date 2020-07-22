@@ -98,36 +98,28 @@ class Model:
                                                                   1.0 - self.outgroup[index_other]]))
             choice_other = 0 if choice_0_value > choice_1_value else 1
 
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+            return self.game[choice_focal, choice_other], \
+                   self.game[choice_other, choice_focal]
 
-    def compute_payoff(self, samples):
+    def compute_payoff(self):
         self.payoffs = np.zeros(self.number_of_agents)
 
-        for _ in range(samples):
-            game_played = [False for _ in range(self.number_of_agents)]
-            permute(self.matching_indices, self.number_of_agents)
-            for focal_index in self.matching_indices:
-                if game_played[focal_index]:
-                    continue
-                viable_neighbours = [nbr for nbr in
-                    self.graph.adj[focal_index].keys() if not game_played[nbr]]
-                if len(viable_neighbours) > 0:
-                    other_index = np.random.choice(viable_neighbours)
-                    game_played[focal_index] = True
-                    game_played[other_index] = True
-                    payoff_focal, payoff_other = self.encounter(focal_index,
-                                                                other_index)
-                    self.payoffs[focal_index] = self.payoffs[focal_index] + \
-                        payoff_focal
-                    self.payoffs[other_index] = self.payoffs[other_index] + \
-                        payoff_other
-        self.payoffs = self.payoffs/samples
+        for focal_agent in range(self.number_of_agents):
+            if len(self.graph.adj[focal_agent].keys()) > 0:
 
-    def step(self, samples, selection_intensity, perturbation_probability=0.05,
+                neighbours = [nbr for nbr in self.graph.adj[focal_agent].keys()]
+
+                for neighbour in neighbours:
+                    payoff_focal, _ = self.encounter(focal_agent, neighbour)
+                    self.payoffs[focal_agent] = self.payoffs[focal_agent] + payoff_focal
+                self.payoffs[focal_agent] = self.payoffs[focal_agent] / \
+                    len(neighbours)
+
+    def step(self, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
 
         # Compute the current payoff
-        self.compute_payoff(samples)
+        self.compute_payoff()
 
         new_ingroup = []
         new_outgroup = []
@@ -174,7 +166,7 @@ class Model:
         self.ingroup = np.array(new_ingroup)
         self.outgroup = np.array(new_outgroup)
 
-    def run_simulation(self, random_seed, number_of_steps, rounds_per_step,
+    def run_simulation(self, random_seed, number_of_steps,
                        selection_intensity, perturbation_probability,
                        perturbation_scale, data_recording,
                        data_file_path, write_frequency):
@@ -186,7 +178,7 @@ class Model:
                 writer = csv.writer(output_file)
 
                 for current_step in range(number_of_steps):
-                    self.step(rounds_per_step, selection_intensity,
+                    self.step(selection_intensity,
                               perturbation_probability, perturbation_scale)
 
                     if current_step % write_frequency == 0 \
@@ -196,7 +188,7 @@ class Model:
                                                             self.outgroup)))
         else:
             for _ in range(number_of_steps):
-                self.step(rounds_per_step, selection_intensity,
+                self.step(selection_intensity,
                           perturbation_probability, perturbation_scale)
 
 
@@ -215,7 +207,6 @@ def main(config_file_path):
                   config["initial_number_of_0_tags"],
                   graph)
     model.run_simulation(config["random_seed"], config["number_of_steps"],
-                         config["rounds_per_step"],
                          config["selection_intensity"],
                          config["perturbation_probability"],
                          config["perturbation_scale"], config["data_recording"],

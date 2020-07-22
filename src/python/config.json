@@ -11,7 +11,6 @@
     "initial_number_of_0_tags": 5,
     "random_seed": 12345,
     "number_of_steps": 1000,
-    "rounds_per_step": 100,
     "selection_intensity": 0.1,
     "perturbation_probability": 0.1,
     "perturbation_scale": 0.05,
