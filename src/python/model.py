@@ -54,7 +54,14 @@ class Model:
         self.graph = graph
 
     def draw_graph(self):
-        nx.draw(self.graph, with_labels=True)
+        agent_0_colour = "#ff0000" # Red
+        agent_1_colour = "#0000ff" # Blue
+        nx.drawing.nx_pylab.draw_networkx(
+            self.graph, pos=nx.drawing.layout.circular_layout(self.graph),
+            nodelist=[i for i in range(self.number_of_agents)],
+            node_color=[agent_0_colour if i < self.number_of_0_tags else
+                        agent_1_colour for i in range(self.number_of_agents)],
+            with_labels=True)
         plt.show()
 
     def encounter(self, index_focal, index_other):
