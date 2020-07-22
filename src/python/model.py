@@ -118,7 +118,8 @@ class Model:
 
                 for neighbour in neighbours:
                     payoff_focal, _ = self.encounter(focal_agent, neighbour)
-                    self.payoffs[focal_agent] = self.payoffs[focal_agent] + payoff_focal
+                    self.payoffs[focal_agent] = self.payoffs[focal_agent] + \
+                        payoff_focal
                 self.payoffs[focal_agent] = self.payoffs[focal_agent] / \
                     len(neighbours)
 
