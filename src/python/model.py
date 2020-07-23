@@ -11,6 +11,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
+
 class policy_estimator():
     def __init__(self):
         self.n_inputs = 2  # agent's belief
@@ -27,6 +28,8 @@ class policy_estimator():
     def predict(self, state):
         action = self.network(torch.FloatTensor(state))
         return action
+
+
 
 def discount_rewards(rewards, gamma=0.99):
     r = np.array([gamma**i * rewards[i]
@@ -55,11 +58,18 @@ class Two_Agent_Model:
         self.number_of_learning_agents = number_of_learning_agents
 
         # Create policies for learning agents
-        self.policies = {}
+        self.policies = []
         for i in range(number_of_learning_agents):
-            key = "policy_ingroup_agent_{}".format(str(i))
-            policy = policy_estimator()
-            self.policies[key] = policy
+            self.policies.append(policy_estimator())
+
+
+        # Create optimizers for learning agents
+        self.optimizers = []
+        for i in range(number_of_learning_agents):
+            optimizer = optim.Adam(self.policies[i].network.parameters(), lr=0.01)
+            self.optimizers.append(optimizer)
+
+
 
 
     def encounter(self, index_focal, index_other):
@@ -107,91 +117,92 @@ class Two_Agent_Model:
 
     def reinforce(self, policy_estimator, num_episodes, number_of_steps,
                   batch_size, gamma):
-        # Set up lists to hold results
-        total_rewards = []
-        batch_rewards = []
-        batch_actions = []
-        batch_states = []
-        batch_counter = 1
-        beliefs = []
-        beliefs.append(self.belief[0])
 
-        # Define optimizer
-        optimizer = optim.Adam(policy_estimator.network.parameters(),
-                               lr=0.01)
+        # Set up lists to hold results
+        total_rewards =  [ [] for _ in range(self.number_of_learning_agents)]
+        batch_rewards = [ [] for _ in range(self.number_of_learning_agents)]
+        batch_actions = [ [] for _ in range(self.number_of_learning_agents)]
+        batch_states = [ [] for _ in range(self.number_of_learning_agents)]
+        beliefs = [ [] for _ in range(self.number_of_learning_agents)]
+        for i in range(self.number_of_learning_agents):
+            beliefs[i].append(self.belief[i])
+
         ep = 0
         while ep < num_episodes:
-            states = []
-            rewards = []
-            actions = []
-            done = False
+            states = [ [] for _ in range(self.number_of_learning_agents) ]
+            rewards = [ [] for _ in range(self.number_of_learning_agents) ]
+            actions = [ [] for _ in range(self.number_of_learning_agents) ]
+
             for _ in range(number_of_steps):
                 # Play a round of games
                 self.compute_payoff(batch_size)
-                current_state = [self.belief[0], self.payoffs[0]]
-                # Select action
-                action = policy_estimator.predict(
-                    current_state).detach().numpy()
-                if action > 1:
-                    action = 1.0
-                if action < 0:
-                    action = 0.0
 
-                # Calculate reward
-                self.belief[0] = action
-                p1,p2 = self.encounter(0,1)
-                r = p1
+                for i in range(self.number_of_learning_agents):
+                    current_state = [self.belief[i], self.payoffs[i]]
+                    # Select action
+                    action = self.policies[i].predict(
+                        current_state).detach().numpy()
+                    if action > 1:
+                        action = 1.0
+                    if action < 0:
+                        action = 0.0
 
-                states.append(current_state)
-                rewards.append(r)
-                actions.append(action)
+                    # Calculate reward
+                    self.belief[i] = action
+                    payoff_rewards = self.encounter(0,1)
+                    r = payoff_rewards[i]
+
+                    states[i].append(current_state)
+                    rewards[i].append(r)
+                    actions[i].append(action)
 
             # update policy
-            batch_rewards.extend(discount_rewards(rewards, gamma))
-            batch_states.extend(states)
-            batch_actions.extend(actions)
-            total_rewards.append(sum(rewards))
+            for i in range(self.number_of_learning_agents):
+                batch_rewards[i].extend(discount_rewards(rewards[i], gamma))
+                batch_states[i].extend(states[i])
+                batch_actions[i].extend(actions[i])
+                total_rewards[i].append(sum(rewards[i]))
 
-            optimizer.zero_grad()
-            state_tensor = torch.FloatTensor(batch_states)
-            reward_tensor = torch.FloatTensor(batch_rewards)
+                optimizer = self.optimizers[i]
+                optimizer.zero_grad()
+                state_tensor = torch.FloatTensor(batch_states[i])
+                reward_tensor = torch.FloatTensor(batch_rewards[i])
 
-            # Actions are used as indices, must be LongTensor
-            action_tensor = torch.LongTensor(
-                batch_actions)
+                # Actions are used as indices, must be LongTensor
+                action_tensor = torch.LongTensor(
+                    batch_actions[i])
 
-            # Calculate loss
-            logprob = torch.log(
-                policy_estimator.predict(state_tensor))
+                # Calculate loss
+                logprob = torch.log(
+                    self.policies[i].predict(state_tensor))
 
-            if len(action_tensor.size()) == 1:
-                # self.belief = 1
-                break
-            selected_logprobs = reward_tensor * \
-                                torch.gather(logprob, 1,
-                                             action_tensor).squeeze()
-            loss = -selected_logprobs.mean()
+                if len(action_tensor.size()) == 1:
+                    # self.belief = 1
+                    break
 
-            # Calculate gradients
-            loss.backward()
-            # Apply gradients
-            optimizer.step()
+                selected_logprobs = reward_tensor * \
+                                    torch.gather(logprob, 1,
+                                                 action_tensor).squeeze()
+                loss = -selected_logprobs.mean()
 
-            batch_rewards = []
-            batch_actions = []
-            batch_states = []
+                # Calculate gradients
+                loss.backward()
+                # Apply gradients
+                optimizer.step()
 
-            avg_rewards = np.mean(total_rewards[-100:])
-            # Print running average
-            #print("\rEp: " + "{}" + " Average of last 100:" +
-            #      "{:.2f}".format(
-            #          ep + 1, avg_rewards), end="")
+                batch_rewards[i] = []
+                batch_actions[i] = []
+                batch_states[i] = []
 
-            if (ep+1) % 10 == 0:
-                print('\rEpisode {}\tAverage reward of last 100: {:.2f}'.format(ep+1, avg_rewards))
-                print("Current belief ", self.belief[0])
+                avg_rewards = np.mean(total_rewards[i][-100:])
+
+                beliefs[i].append(self.belief[i])
+
+                if (ep+1) % 10 == 0:
+                    print('\rEpisode {}\tAverage reward of last 100: {:.2f}'.format(ep+1, avg_rewards))
+                    print("Agent ", str(i), " current belief ", self.belief[i])
             ep += 1
-            beliefs.append(self.belief[0])
+
 
         actual_rewards = np.array(total_rewards)/number_of_steps
         return actual_rewards, beliefs
@@ -214,13 +225,16 @@ def plot_results(rewards, beliefs):
 
     fig.tight_layout(pad=2)
     plt.show()
-
 if __name__ == "__main__":
-    model = Two_Agent_Model(4, 1, 3, 2, 0.9, 1, 1)
-    policy_est = policy_estimator()
-    rewards, beliefs = model.reinforce(policy_est, 100, 1000, 100, 0.99)
-    plot_results(rewards, beliefs)
 
+    np.random.seed(12345)
+    torch.manual_seed(12345)
+
+    model = Two_Agent_Model(4, 1, 3, 2, 0.9, 2, 0)
+    policy_est = policy_estimator()
+    rewards, beliefs = model.reinforce(policy_est, 100, 1000, 10, 0.99)
+    for i in range(len(rewards)):
+        plot_results(rewards[i], beliefs[i])
     print(model.belief)
 
 '''
@@ -246,3 +260,4 @@ def main(config_file_path):
 if __name__ == "__main__":
     main(sys.argv[1])
 '''
+
