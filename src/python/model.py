@@ -83,8 +83,15 @@ class Two_Agent_Model:
             return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
         else:
-            choice_focal = 0 if self.game[0][self.fixed_strategy] > self.game[1][self.fixed_strategy] else 1
+            # choice focal
+            choice_0_value = np.dot(self.game[0], np.array([self.belief[index_focal],
+                                                                  1.0 - self.belief[index_focal]]))
+            choice_1_value = np.dot(self.game[1], np.array([self.belief[index_focal],
+                                                                  1.0 - self.belief[index_focal]]))
+            choice_focal = 0 if choice_0_value > choice_1_value else 1
+
             choice_other = self.fixed_strategy
+
             return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
 
 
@@ -106,17 +113,19 @@ class Two_Agent_Model:
         batch_actions = []
         batch_states = []
         batch_counter = 1
+        beliefs = []
+        beliefs.append(self.belief[0])
 
         # Define optimizer
         optimizer = optim.Adam(policy_estimator.network.parameters(),
                                lr=0.01)
         ep = 0
-        while ep < 50:
+        while ep < num_episodes:
             states = []
             rewards = []
             actions = []
             done = False
-            while done == False:
+            for _ in range(number_of_steps):
                 # Play a round of games
                 self.compute_payoff(batch_size)
                 current_state = [self.belief[0], self.payoffs[0]]
@@ -137,66 +146,59 @@ class Two_Agent_Model:
                 rewards.append(r)
                 actions.append(action)
 
-                if len(states) % number_of_steps == 0:
-                    done = True
+            # update policy
+            batch_rewards.extend(discount_rewards(rewards, gamma))
+            batch_states.extend(states)
+            batch_actions.extend(actions)
+            total_rewards.append(sum(rewards))
 
-                # If done, batch data
-                if done:
-                    batch_rewards.extend(discount_rewards(
-                        rewards, gamma))
-                    batch_states.extend(states)
-                    batch_actions.extend(actions)
-                    batch_counter += 1
-                    total_rewards.append(sum(rewards))
-                    #done = False
+            optimizer.zero_grad()
+            state_tensor = torch.FloatTensor(batch_states)
+            reward_tensor = torch.FloatTensor(batch_rewards)
 
-                    # If batch is complete, update network
-                    if batch_counter == batch_size:
-                        optimizer.zero_grad()
-                        state_tensor = torch.FloatTensor(batch_states)
-                        reward_tensor = torch.FloatTensor(
-                            batch_rewards)
-                        # Actions are used as indices, must be
-                        # LongTensor
-                        action_tensor = torch.LongTensor(
-                            batch_actions)
+            # Actions are used as indices, must be LongTensor
+            action_tensor = torch.LongTensor(
+                batch_actions)
 
-                        # Calculate loss
-                        logprob = torch.log(
-                            policy_estimator.predict(state_tensor))
-                        selected_logprobs = reward_tensor * \
-                                            torch.gather(logprob, 1,
-                                                         action_tensor).squeeze()
-                        '''
-                        selected_logprobs = reward_tensor * torch.gather(logprob, 1, action_tensor.unsqueeze(1)).squeeze()
-                        '''
-                        loss = -selected_logprobs.mean()
+            # Calculate loss
+            logprob = torch.log(
+                policy_estimator.predict(state_tensor))
 
-                        # Calculate gradients
-                        loss.backward()
-                        # Apply gradients
-                        optimizer.step()
+            if action_tensor.size() == torch.Size([9000]):
+                # self.belief = 1
+                break
+            selected_logprobs = reward_tensor * \
+                                torch.gather(logprob, 1,
+                                             action_tensor).squeeze()
+            loss = -selected_logprobs.mean()
 
-                        batch_rewards = []
-                        batch_actions = []
-                        batch_states = []
-                        batch_counter = 1
+            # Calculate gradients
+            loss.backward()
+            # Apply gradients
+            optimizer.step()
 
-                    avg_rewards = np.mean(total_rewards[-100:])
-                    # Print running average
-                    #print("\rEp: " + "{}" + " Average of last 100:" +
-                    #      "{:.2f}".format(
-                    #          ep + 1, avg_rewards), end="")
+            batch_rewards = []
+            batch_actions = []
+            batch_states = []
 
-                    if (ep+1) % 10 == 0:
-                        print('\rEpisode {}\tAverage reward of last 100: {:.2f}'.format(ep+1, avg_rewards))
-                    ep += 1
+            avg_rewards = np.mean(total_rewards[-100:])
+            # Print running average
+            #print("\rEp: " + "{}" + " Average of last 100:" +
+            #      "{:.2f}".format(
+            #          ep + 1, avg_rewards), end="")
 
-        return total_rewards
+            if (ep+1) % 10 == 0:
+                print('\rEpisode {}\tAverage reward of last 100: {:.2f}'.format(ep+1, avg_rewards))
+                print("Current belief ", self.belief[0])
+            ep += 1
+            beliefs.append(self.belief[0])
 
-def plot_results(rewards):
+        actual_rewards = np.array(total_rewards)/number_of_steps
+        return actual_rewards, beliefs
+
+def plot_results(rewards, beliefs):
     window = int(len(rewards)/ 20)
-    fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9]);
+    fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=[9, 9]);
     rolling_mean = pd.Series(rewards).rolling(window).mean()
     std = pd.Series(rewards).rolling(window).std()
     ax1.plot(rolling_mean)
@@ -205,10 +207,10 @@ def plot_results(rewards):
     ax1.set_xlabel('Episode');
     ax1.set_ylabel('Rewards')
 
-    ax2.plot(rewards)
-    ax2.set_title('Rewards')
+    ax2.plot(beliefs)
+    ax2.set_title('Beliefs')
     ax2.set_xlabel('Episode');
-    ax2.set_ylabel('Rewards')
+    ax2.set_ylabel('Beliefs')
 
     fig.tight_layout(pad=2)
     plt.show()
@@ -216,8 +218,8 @@ def plot_results(rewards):
 if __name__ == "__main__":
     model = Two_Agent_Model(4, 1, 3, 2, 0.9, 1, 1)
     policy_est = policy_estimator()
-    rewards = model.reinforce(policy_est, 100, 1000, 10, 0.99)
-    plot_results(rewards)
+    rewards, beliefs = model.reinforce(policy_est, 100, 1000, 100, 0.99)
+    plot_results(rewards, beliefs)
 
     print(model.belief)
 
