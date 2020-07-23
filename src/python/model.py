@@ -21,6 +21,8 @@ class Agent:
         self.ingroup = ingroup
         self.outgroup = outgroup
         self.payoff = 0.0
+        self.payoff_against_0 = 0.0
+        self.payoff_against_1 = 0.0
 
 
 class Model:
@@ -132,10 +134,24 @@ class Model:
 
                 neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
 
+                games_played_against_0 = 0
+                games_played_against_1 = 0
+
                 for neighbour_index in neighbours:
                     payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
+                    
                     self.agents[focal_agent_index].payoff += payoff_focal
+                    
+                    if self.agents[neighbour_index].tag == 0:
+                        games_played_against_0 += 1
+                        self.agents[focal_agent_index].payoff_against_0 += payoff_focal
+                    else:
+                        games_played_against_1 += 1
+                        self.agents[focal_agent_index].payoff_against_1 += payoff_focal
+                
                 self.agents[focal_agent_index].payoff /= len(neighbours)
+                self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
     def step(self, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
