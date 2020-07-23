@@ -164,7 +164,7 @@ class Two_Agent_Model:
             logprob = torch.log(
                 policy_estimator.predict(state_tensor))
 
-            if action_tensor.size() == torch.Size([9000]):
+            if len(action_tensor.size()) == 1:
                 # self.belief = 1
                 break
             selected_logprobs = reward_tensor * \
