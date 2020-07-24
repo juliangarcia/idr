@@ -128,6 +128,8 @@ class Model:
         # self.payoffs = np.zeros(self.number_of_agents)
         for agent in self.agents:
             agent.payoff = 0.0
+            agent.payoff_against_0 = 0.0
+            agent.payoff_against_1 = 0.0
 
         for focal_agent_index in range(self.number_of_agents):
             if len(self.graph.adj[focal_agent_index].keys()) > 0:
