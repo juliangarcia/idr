@@ -41,3 +41,10 @@ def choose_strategy_mixed_strategy(tag, ingroup, outgroup, game, opponent_tag):
         strategy = np.random.choice([0,1], p=[outgroup, 1-outgroup])
 
     return strategy
+
+choose_strategy_map = {
+    "expected_payoff": choose_strategy_expected_payoff,
+    "cooperate": choose_strategy_cooperate,
+    "defect": choose_strategy_defect,
+    "mixed": choose_strategy_mixed_strategy
+}

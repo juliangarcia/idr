@@ -33,7 +33,7 @@ class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags, graph):
+                 initial_number_of_0_tags, graph, choose_strategy):
 
         # 0 is cooperate
         # 1 is defect
@@ -55,7 +55,7 @@ class Model:
         self.agents = [
             Agent(1,
                   tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                  choose_strategy_expected_payoff)
+                  choose_strategy)
             for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
@@ -226,7 +226,8 @@ def main(config_file_path):
                   config["tag1_initial_ingroup_belief"],
                   config["tag1_initial_outgroup_belief"],
                   config["initial_number_of_0_tags"],
-                  graph)
+                  graph,
+                  choose_strategy_map[config["choose_strategy"]])
     model.run_simulation(config["random_seed"], config["number_of_steps"],
                          config["selection_intensity"],
                          config["perturbation_probability"],
