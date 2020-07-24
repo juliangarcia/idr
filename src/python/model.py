@@ -152,8 +152,10 @@ class Model:
                         self.agents[focal_agent_index].payoff_against_1 += payoff_focal
 
                 self.agents[focal_agent_index].payoff /= len(neighbours)
-                self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
-                self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
+                if games_played_against_0 > 0:
+                    self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                if games_played_against_1 > 0:
+                    self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
     def step(self, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
