@@ -139,16 +139,16 @@ class Model:
 
                 for neighbour_index in neighbours:
                     payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
-                    
+
                     self.agents[focal_agent_index].payoff += payoff_focal
-                    
+
                     if self.agents[neighbour_index].tag == 0:
                         games_played_against_0 += 1
                         self.agents[focal_agent_index].payoff_against_0 += payoff_focal
                     else:
                         games_played_against_1 += 1
                         self.agents[focal_agent_index].payoff_against_1 += payoff_focal
-                
+
                 self.agents[focal_agent_index].payoff /= len(neighbours)
                 self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
                 self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
@@ -171,7 +171,7 @@ class Model:
 
             neighbourhood_fitness_sum = np.sum(np.exp(
                 selection_intensity*neighbourhood_payoffs))
-            
+
             neighbourhood_probabilities = np.exp(
                 selection_intensity*neighbourhood_payoffs) / \
                 neighbourhood_fitness_sum
@@ -187,7 +187,7 @@ class Model:
                     current_agent_new_ingroup = 0.0
                 if current_agent_new_ingroup > 1:
                     current_agent_new_ingroup = 1.0
-                
+
                 current_agent_new_outgroup = np.random.normal(
                     self.agents[agent_to_imitate_index].outgroup,
                     perturbation_scale)
@@ -200,7 +200,7 @@ class Model:
                     .ingroup
                 current_agent_new_outgroup = self.agents[agent_to_imitate_index]\
                     .outgroup
-            
+
             new_agents.append(
                 Agent(self.agents[current_agent_index].tag,
                       current_agent_new_ingroup, current_agent_new_outgroup))
