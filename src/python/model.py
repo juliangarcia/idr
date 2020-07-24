@@ -219,7 +219,7 @@ class Model:
         if data_recording:
             with open(data_file_path, 'w', newline='\n') as output_file:
                 writer = csv.writer(output_file)
-                header_list = ["P" + str(i) for i in range(self.number_of_agents)] + \
+                header_list = ["T"] + ["P" + str(i) for i in range(self.number_of_agents)] + \
                               ["I" + str(i) for i in range(self.number_of_agents)] + \
                               ["O" + str(i) for i in range(self.number_of_agents)]
                 writer.writerow(header_list)
@@ -236,9 +236,10 @@ class Model:
                                             for agent in self.agents])
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
-                        writer.writerow(np.append(payoffs,
+                        writer.writerow(np.append([current_step],
+                                            np.append(payoffs,
                                                   np.append(ingroup,
-                                                            outgroup)))
+                                                            outgroup))))
         else:
             for _ in range(number_of_steps):
                 self.step(selection_intensity,
