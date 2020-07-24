@@ -5,6 +5,7 @@ import json
 import sys
 import networkx as nx
 import matplotlib.pyplot as plt
+from choose_strategy_functions import *
 
 @jit(nopython=True)
 def permute(matching, n):
@@ -16,36 +17,16 @@ def permute(matching, n):
 
 
 class Agent:
-    def __init__(self, tag, ingroup, outgroup):
+    def __init__(self, tag, ingroup, outgroup, choose_strategy):
         self.tag = tag
         self.ingroup = ingroup
         self.outgroup = outgroup
         self.payoff = 0.0
         self.payoff_against_0 = 0.0
         self.payoff_against_1 = 0.0
-
-    def choose_strategy(self, game, opponent_tag):
-        if self.tag == opponent_tag:
-            # Ingroup interaction
-
-            choice_0_value = np.dot(game[0],
-                                    np.array([self.ingroup,
-                                              1.0 - self.ingroup]))
-            choice_1_value = np.dot(game[1],
-                                    np.array([self.ingroup,
-                                              1.0 - self.ingroup]))
-
-            return 0 if choice_0_value > choice_1_value else 1
-        else:
-            # Outgroup interaction
-
-            choice_0_value = np.dot(game[0],
-                                    np.array([self.outgroup,
-                                              1.0 - self.outgroup]))
-            choice_1_value = np.dot(game[1],
-                                    np.array([self.outgroup,
-                                              1.0 - self.outgroup]))
-            return 0 if choice_0_value > choice_1_value else 1
+        self.choose_strategy_func = choose_strategy
+        self.choose_strategy = lambda *args: choose_strategy(
+            self.tag, self.ingroup, self.outgroup, *args)
 
 
 class Model:
@@ -72,7 +53,9 @@ class Model:
         # will play strategy 0 - cooperate
 
         self.agents = [
-            Agent(1, tag1_initial_ingroup_belief, tag1_initial_outgroup_belief)
+            Agent(1,
+                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
+                  choose_strategy_expected_payoff)
             for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
@@ -188,7 +171,8 @@ class Model:
 
             new_agents.append(
                 Agent(self.agents[current_agent_index].tag,
-                      current_agent_new_ingroup, current_agent_new_outgroup))
+                      current_agent_new_ingroup, current_agent_new_outgroup,
+                      self.agents[current_agent_index].choose_strategy_func))
 
         self.agents = new_agents
 
