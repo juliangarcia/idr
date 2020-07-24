@@ -24,6 +24,29 @@ class Agent:
         self.payoff_against_0 = 0.0
         self.payoff_against_1 = 0.0
 
+    def choose_strategy(self, game, opponent_tag):
+        if self.tag == opponent_tag:
+            # Ingroup interaction
+
+            choice_0_value = np.dot(game[0],
+                                    np.array([self.ingroup,
+                                              1.0 - self.ingroup]))
+            choice_1_value = np.dot(game[1],
+                                    np.array([self.ingroup,
+                                              1.0 - self.ingroup]))
+
+            return 0 if choice_0_value > choice_1_value else 1
+        else:
+            # Outgroup interaction
+
+            choice_0_value = np.dot(game[0],
+                                    np.array([self.outgroup,
+                                              1.0 - self.outgroup]))
+            choice_1_value = np.dot(game[1],
+                                    np.array([self.outgroup,
+                                              1.0 - self.outgroup]))
+            return 0 if choice_0_value > choice_1_value else 1
+
 
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
@@ -76,53 +99,11 @@ class Model:
         # assert 0 <= index_other < self.number_of_agents
         # assert index_focal != index_other
 
-        if agent_focal.tag == agent_other.tag:
-            # ingroup interaction
+        choice_focal = agent_focal.choose_strategy(self.game, agent_other.tag)
+        choice_other = agent_other.choose_strategy(self.game, agent_focal.tag)
 
-            # choice focal
-            choice_0_value = np.dot(self.game[0],
-                                    np.array([agent_focal.ingroup,
-                                              1.0 - agent_focal.ingroup]))
-            choice_1_value = np.dot(self.game[1],
-                                    np.array([agent_focal.ingroup,
-                                              1.0 - agent_focal.ingroup]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0],
-                                    np.array([agent_other.ingroup,
-                                              1.0 - agent_other.ingroup]))
-            choice_1_value = np.dot(self.game[1],
-                                    np.array([agent_other.ingroup,
-                                              1.0 - agent_other.ingroup]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], \
-                   self.game[choice_other, choice_focal]
-
-        else:
-            # outgroup interaction
-
-            # choice focal
-            choice_0_value = np.dot(self.game[0],
-                                    np.array([agent_focal.outgroup,
-                                              1.0 - agent_focal.outgroup]))
-            choice_1_value = np.dot(self.game[1],
-                                    np.array([agent_focal.outgroup,
-                                              1.0 - agent_focal.outgroup]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0],
-                                    np.array([agent_other.outgroup,
-                                             1.0 - agent_other.outgroup]))
-            choice_1_value = np.dot(self.game[1],
-                                    np.array([agent_other.outgroup,
-                                              1.0 - agent_other.outgroup]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], \
-                   self.game[choice_other, choice_focal]
+        return self.game[choice_focal, choice_other], \
+               self.game[choice_other, choice_focal]
 
     def compute_payoff(self):
         # self.payoffs = np.zeros(self.number_of_agents)
