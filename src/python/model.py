@@ -3,13 +3,21 @@ from numba import jit
 import csv
 import json
 import sys
+import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
-from torch.distributions import Categorical
+from choose_strategy_functions import *
+
+@jit(nopython=True)
+def permute(matching, n):
+    for i in range(n-1):
+        j = i + np.random.randint(n-i)
+        temp = matching[i]
+        matching[i] = matching[j]
+        matching[j] = temp
 
 class Policy_Network():
     def __init__(self):
@@ -28,13 +36,15 @@ class Policy_Network():
         action = self.network(torch.FloatTensor(state))
         return action
 
-class Policy()
-    def __init__(self, agent, belief, gamma):
-        policy = Policy_Network()
+class Policy():
+    def __init__(self, agent, belief, gamma, epsilon):
+        self.policy = Policy_Network()
         self.optimizer = optim.Adam(self.policy.network.parameters(), lr=0.01)
 
-        self.gamma = 0.99
+        self.gamma = gamma
+        self.epsilon = epsilon
         self.agent = agent
+        self.belief = belief
 
         self.total_rewards = []
         self.batch_rewards = []
@@ -54,33 +64,73 @@ class Policy()
         self.rewards = []
         self.actions = []
 
-        self.current_action = 0
+        self.current_action = self.current_belief
         self.current_reward = 0
         self.current_state = 0
 
     def select_action(self):
-        self.current_state = [self.current_belief, self.agent.payoff]
         # Select action
-        self.current_action = self.policy.predict(
+        predicted_action = self.policy.predict(
             self.current_state).detach().numpy()
-        if self.current_action > 1:
-            self.current_action = 1.0
-        if self.current_action < 0:
-            self.current_action = 0.0
+        self.current_action = predicted_action[0]
+        if self.current_action >= 1:
+            self.current_action = 0.99
+        if self.current_action <= 0:
+            self.current_action = 0.01
 
-    def update_reward(self, reward):
-        self.current_reward = reward
+        # introduce noise
+        x = np.random.uniform()
+        if x < self.epsilon:
+            experimental_action = np.random.uniform(size=1)
+            self.current_action = experimental_action[0]
+
+    def update_reward(self):
+        if self.belief == "ingroup":
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_0
+            else:
+                self.current_reward = self.agent.payoff_against_1
+        else:
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_1
+            else:
+                self.current_reward = self.agent.payoff_against_0
+
+        # current state = [ current in/outgroup belief, current payoff aginst 0/1]
+        self.current_state = [self.current_action, self.current_reward]
 
         # make updates
         self.states.append(self.current_state)
-        self.rewards.append(self.current_rewards)
+        self.rewards.append(self.current_reward)
         self.actions.append(self.current_action)
-        if belief == "ingroup":
+
+        # update agent class
+        if self.belief == "ingroup":
             self.agent.ingroup = self.current_action
         else:
             self.agent.outgroup = self.current_action
 
         self.current_belief = self.current_action
+
+    def record_starting_state(self):
+        if self.belief == "ingroup":
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_0
+            else:
+                self.current_reward = self.agent.payoff_against_1
+        else:
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_1
+            else:
+                self.current_reward = self.agent.payoff_against_0
+
+        self.current_state = [self.current_belief, self.current_reward]
+        self.current_action = self.current_belief
+
+        # make updates
+        self.states.append(self.current_state)
+        self.rewards.append(self.current_reward)
+        self.actions.append(self.current_action)
 
     def discount_rewards(self, rewards):
         r = np.array([self.gamma ** i * rewards[i]
@@ -92,7 +142,7 @@ class Policy()
         return r
 
     def update_policy(self):
-        self.batch_rewards.extend(discount_rewards(self.rewards, self.gamma))
+        self.batch_rewards.extend(self.discount_rewards(self.rewards))
         self.batch_states.extend(self.states)
         self.batch_actions.extend(self.actions)
         self.total_rewards.append(sum(self.rewards))
@@ -107,13 +157,9 @@ class Policy()
         # Calculate loss
         logprob = torch.log(self.policy.predict(state_tensor))
 
-        if len(action_tensor.size()) == 1:
-            # self.belief = 1
-            break
-
         selected_logprobs = reward_tensor * \
                             torch.gather(logprob, 1,
-                                         action_tensor).squeeze()
+                                         action_tensor.unsqueeze(1)).squeeze()
         loss = -selected_logprobs.mean()
 
         # Calculate gradients
@@ -121,31 +167,33 @@ class Policy()
         # Apply gradients
         self.optimizer.step()
 
-        self.batch_rewards[i] = []
-        self.batch_actions[i] = []
-        self.batch_states[i] = []
+        self.batch_rewards = []
+        self.batch_actions = []
+        self.batch_states = []
 
         self.avg_rewards = np.mean(self.total_rewards[-100:])
 
         self.beliefs.append(self.current_belief)
 
-
 class Agent:
-    def __init__(self, id, ingroup_belief, outgroup_belief, tag):
-    self.id = id
-    self.ingroup = ingroup_belief
-    self.outgroup = outgroup_belief
-    self.tag = tag
-    self.payoff = 0
-    self.ingroup_policy = Policy(self, "ingroup")
-    self.outgroup_policy = Policy(self, "outgroup")
-
+    def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0):
+        self.tag = tag
+        self.ingroup = ingroup
+        self.outgroup = outgroup
+        self.payoff = payoff
+        self.payoff_against_0 = 0.0
+        self.payoff_against_1 = 0.0
+        self.choose_strategy_func = choose_strategy
+        self.choose_strategy = lambda *args: choose_strategy(
+            self.tag, self.ingroup, self.outgroup, *args)
+        self.ingroup_policy = Policy(self, "ingroup", 0.99, 0.05)
+        self.outgroup_policy = Policy(self, "outgroup", 0.99, 0.05)
 
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags):
+                 initial_number_of_0_tags, graph, choose_strategy):
 
         # 0 is cooperate
         # 1 is defect
@@ -164,159 +212,152 @@ class Model:
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
 
-        self.tags = np.ones(number_of_agents, dtype=int)
-        self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief, dtype=float)
-        self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief, dtype=float)
+        self.agents = [
+            Agent(1,
+                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
+                  choose_strategy)
+            for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
-            self.tags[i] = 0
-            self.ingroup[i] = tag0_initial_ingroup_belief
-            self.outgroup[i] = tag0_initial_outgroup_belief
+            self.agents[i].tag = 0
+            self.agents[i].ingroup = tag0_initial_ingroup_belief
+            self.agents[i].outgroup = tag0_initial_outgroup_belief
 
-        self.matching_indices = list(range(self.number_of_agents))
-        self.payoffs = np.zeros(number_of_agents, dtype=float)
+        # Create graph
+        self.graph = graph
 
-        self.agents = []
-        for i in range(self.number_of_agents):
-            self.agents.append(Agent(i, self.ingroup[i], self.outgroup[i], self.tag[i]))
-
-    def encounter(self, index_focal, index_other):
-        assert 0 <= index_focal < self.number_of_agents
-        assert 0 <= index_other < self.number_of_agents
-        assert index_focal != index_other
-
-        if self.tags[index_focal] == self.tags[index_other]:
-            # ingroup interaction
-
-            # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
-                                                                  1.0 - self.ingroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
-                                                                  1.0 - self.ingroup[index_focal]]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
-                                                                  1.0 - self.ingroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
-                                                                  1.0 - self.ingroup[index_other]]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
-
-        else:
-            # outgroup interaction
-
-            # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
-                                                                  1.0 - self.outgroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
-                                                                  1.0 - self.outgroup[index_focal]]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
-                                                                  1.0 - self.outgroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
-                                                                  1.0 - self.outgroup[index_other]]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
-
-    def compute_payoff(self, samples):
-        self.payoffs = np.zeros(self.number_of_agents)
-        for _ in range(samples):
-            permute(self.matching_indices, self.number_of_agents)
-            for i in range(0, self.number_of_agents, 2):
-                focal_index = self.matching_indices[i]
-                other_index = self.matching_indices[i + 1]
-                payoff_focal, payoff_other = self.encounter(focal_index, other_index)
-                self.payoffs[focal_index] = self.payoffs[focal_index] + payoff_focal
-                self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
-        self.payoffs = self.payoffs/samples
-        for i in range(self.number_of_agents):
-            self.agents[i].payoff = self.payoffs[i]
-
-    def compute_individual_payoff(self, agent, samples):
-        # plays an agent against other agents but does not change self.payoffs
-        #array and returns that agents payoff
-        agent_payoff = 0
-        players = np.random.randint(low=1, high=self.number_of_agents, size=samples)
-        while agent.id in players:
-            players = np.random.randint(low=1, high=self.number_of_agents, size=samples)
-        for i in players:
-            payoff_focal, payoff_other = self.encounter(agent.id, i)
-            agent_payoff += payoff_focal
-        return agent_payoff/samples
-
-    def reinforce(self, random_seed, number_of_episodes, number_of_steps,
-                  rounds_per_step):
-        for ep in range(number_of_episodes):
-            # reset all agents states, rewards, actions sequences
-            for i in range(self.number_of_agents):
-                self.agents[i].ingroup_policy.states = []
-                self.agents[i].ingroup_policy.rewards = []
-                self.agents[i].ingroup_policy.actions = []
-                self.agents[i].outgroup_policy.states = []
-                self.agents[i].outgroup_policy.rewards = []
-                self.agents[i].outgroup_policy.actions = []
-
-            for _ in range(number_of_steps):
-                # Play a round of games
-                self.compute_payoff(rounds_per_step)
-
-                for i in range(self.number_of_agents):
-                    # select action
-                    self.agents[i].ingroup_policy.select_action()
-                    self.agents[i].outgroup_policy.select_action()
-
-                    # pdate reward and state
-                    self.agents[i].ingroup_policy.update_reward(
-                        self.compute_individual_payoff(self.agents[i]))
-                    self.agents[i].outgroup_policy.update_reward(
-                        self.compute_individual_payoff(self.agents[i]))
-
-            # update policy
-            for i in range(self.number_of_agents):
-                self.agents[i].ingroup_policy.update_policy()
-                self.agents[i].outgroup_policy.update_policy()
-
-            if (ep+1) % 10 == 0:
-                print("Episode: ", str(ep+1))
-
-    def plot_results(self, rewards, beliefs):
-        window = int(len(rewards)/ 20)
-        fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=[9, 9]);
-        rolling_mean = pd.Series(rewards).rolling(window).mean()
-        std = pd.Series(rewards).rolling(window).std()
-        ax1.plot(rolling_mean)
-        ax1.fill_between(range(len(rewards)), rolling_mean - std, rolling_mean + std, color='orange', alpha=0.2)
-        ax1.set_title('Rewards'.format(window))
-        ax1.set_xlabel('Episode');
-        ax1.set_ylabel('Rewards')
-
-        ax2.plot(beliefs)
-        ax2.set_title('Beliefs')
-        ax2.set_xlabel('Episode');
-        ax2.set_ylabel('Beliefs')
-
-        fig.tight_layout(pad=2)
+    def draw_graph(self):
+        agent_0_colour = "#ff0000" # Red
+        agent_1_colour = "#0000ff" # Blue
+        nx.drawing.nx_pylab.draw_networkx(
+            self.graph, pos=nx.drawing.layout.circular_layout(self.graph),
+            nodelist=[i for i in range(self.number_of_agents)],
+            node_color=[agent_0_colour if i < self.number_of_0_tags else
+                        agent_1_colour for i in range(self.number_of_agents)],
+            with_labels=True)
         plt.show()
 
+    def encounter(self, agent_focal, agent_other):
+        # assert 0 <= index_focal < self.number_of_agents
+        # assert 0 <= index_other < self.number_of_agents
+        # assert index_focal != index_other
+
+        choice_focal = agent_focal.choose_strategy(self.game, agent_other.tag)
+        choice_other = agent_other.choose_strategy(self.game, agent_focal.tag)
+
+        return self.game[choice_focal, choice_other], \
+               self.game[choice_other, choice_focal]
+
+    def compute_payoff(self):
+        # self.payoffs = np.zeros(self.number_of_agents)
+        for agent in self.agents:
+            agent.payoff = 0.0
+            agent.payoff_against_0 = 0.0
+            agent.payoff_against_1 = 0.0
+
+        for focal_agent_index in range(self.number_of_agents):
+            if len(self.graph.adj[focal_agent_index].keys()) > 0:
+
+                neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
+
+                games_played_against_0 = 0
+                games_played_against_1 = 0
+
+                for neighbour_index in neighbours:
+                    payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
+
+                    self.agents[focal_agent_index].payoff += payoff_focal
+
+                    if self.agents[neighbour_index].tag == 0:
+                        games_played_against_0 += 1
+                        self.agents[focal_agent_index].payoff_against_0 += payoff_focal
+                    else:
+                        games_played_against_1 += 1
+                        self.agents[focal_agent_index].payoff_against_1 += payoff_focal
+
+                self.agents[focal_agent_index].payoff /= len(neighbours)
+                if games_played_against_0 > 0:
+                    self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                if games_played_against_1 > 0:
+                    self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
+
+    def reinforce(self, number_of_steps):
+        # this is a single episode so run multiple times (i.e. 100)
+
+        # reset all agents states, rewards, actions sequences
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.states = []
+            self.agents[i].ingroup_policy.rewards = []
+            self.agents[i].ingroup_policy.actions = []
+            self.agents[i].outgroup_policy.states = []
+            self.agents[i].outgroup_policy.rewards = []
+            self.agents[i].outgroup_policy.actions = []
+
+        # include rewards from starting state, important!
+        self.compute_payoff()
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.record_starting_state()
+            self.agents[i].outgroup_policy.record_starting_state()
+
+        for _ in range(number_of_steps):
+            for i in range(self.number_of_agents):
+                # select action
+                self.agents[i].ingroup_policy.select_action()
+                self.agents[i].outgroup_policy.select_action()
+
+                # play a round of games
+                self.compute_payoff()
+
+                # update reward and state
+                self.agents[i].ingroup_policy.update_reward()
+                self.agents[i].outgroup_policy.update_reward()
+
+        # update policy
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.update_policy()
+            self.agents[i].outgroup_policy.update_policy()
+
+
+
     def run_simulation(self, random_seed, number_of_episodes, number_of_steps,
-                       rounds_per_step, data_recording, data_file_path,
-                       write_frequency):
+                       data_recording, data_file_path, write_frequency):
+
         np.random.seed(random_seed)
         torch.manual_seed(random_seed)
 
-        self.reinforce(random_seed, number_of_episodes, number_of_steps,
-                  rounds_per_step)
+        if data_recording:
+            with open(data_file_path, 'w', newline='\n') as output_file:
+                writer = csv.writer(output_file)
+                header_list = ["T"] + ["P" + str(i) for i in range(self.number_of_agents)] + \
+                              ["I" + str(i) for i in range(self.number_of_agents)] + \
+                              ["O" + str(i) for i in range(self.number_of_agents)]
+                writer.writerow(header_list)
 
-        # data recording
+                for current_episode in range(number_of_episodes):
+                    self.reinforce(number_of_steps)
+
+                    if current_episode % write_frequency == 0 \
+                            or current_episode == number_of_episodes - 1:
+                        payoffs = np.array([agent.payoff
+                                            for agent in self.agents])
+                        ingroup = np.array([agent.ingroup
+                                            for agent in self.agents])
+                        outgroup = np.array([agent.outgroup
+                                             for agent in self.agents])
+                        writer.writerow(np.append([current_episode],
+                                            np.append(payoffs,
+                                                  np.append(ingroup,
+                                                            outgroup))))
+        else:
+            for _ in range(number_of_episodes):
+                self.reinforce(number_of_steps)
+
 
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
+    with open(config["graph_file_path"]) as graph_file:
+        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
     model = Model(config["number_of_agents"],
                   config["R"], config["S"],
                   config["T"], config["P"],
@@ -324,14 +365,68 @@ def main(config_file_path):
                   config["tag0_initial_outgroup_belief"],
                   config["tag1_initial_ingroup_belief"],
                   config["tag1_initial_outgroup_belief"],
-                  config["initial_number_of_0_tags"])
-    model.run_simultaion(config["random_seed"],
-                        config["number_of_episodes"],
-                        config["number_of_steps"],
-                        config["rounds_per_step"],
-                        config["data_recording"],
-                        config["data_file_path"],
-                        config["write_frequency"])
+                  config["initial_number_of_0_tags"],
+                  graph,
+                  choose_strategy_map[config["choose_strategy"]])
+    model.run_simulation(config["random_seed"],
+                         config["number_of_episodes"],
+                         config["number_of_steps"],
+                         config["data_recording"],
+                         config["data_file_path"],
+                         config["write_frequency"])
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    #main(sys.argv[1])
+    with open("graph.json") as graph_file:
+        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
+    model = Model(24,
+                  4, 1,
+                  3, 2,
+                  0.9,
+                  0.9,
+                  0.9,
+                  0.9,
+                  12,
+                  graph,
+                  choose_strategy_map["expected_payoff"])
+    model.run_simulation(12345,
+                         100,
+                         1000,
+                         False,
+                         "data.csv", 10)
+    print("Ingroup")
+    for i in range(24):
+        print(model.agents[i].ingroup)
+    avg_in_0 = 0
+    avg_in_1 = 0
+    avg_total = 0
+    for i in range(12):
+        avg_in_0 += model.agents[i].ingroup
+        avg_total += model.agents[i].ingroup
+    for i in range(12):
+        avg_in_1 += model.agents[i+12].ingroup
+        avg_total += model.agents[i + 12].ingroup
+
+    print("Average ingroup belief ", avg_total/24)
+    print("Average tag 0 ingroup belief", avg_in_0/12)
+    print("Average tag 1 ingroup belief", avg_in_1 / 12)
+
+    print("Outgroup")
+    for i in range(24):
+        print(model.agents[i].outgroup)
+
+    avg_in_0 = 0
+    avg_in_1 = 0
+    avg_total = 0
+    for i in range(12):
+        avg_in_0 += model.agents[i].outgroup
+        avg_total += model.agents[i].outgroup
+    for i in range(12):
+        avg_in_1 += model.agents[i + 12].outgroup
+        avg_total += model.agents[i + 12].outgroup
+
+    print("Average outgroup belief ", avg_total / 24)
+    print("Average tag 0 outgroup belief", avg_in_0 / 12)
+    print("Average tag 1 outgroup belief", avg_in_1 / 12)
+
+    model.draw_graph()
