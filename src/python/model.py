@@ -172,8 +172,8 @@ class Model:
             new_agents.append(
                 Agent(self.agents[current_agent_index].tag,
                       current_agent_new_ingroup, current_agent_new_outgroup,
-                      self.agents[current_agent_index].choose_strategy_func),
-                      self.agents[current_agent_index].payoff)
+                      self.agents[current_agent_index].choose_strategy_func,
+                      self.agents[current_agent_index].payoff))
 
         self.agents = new_agents
 
