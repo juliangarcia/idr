@@ -1,0 +1,22 @@
+{
+    "number_of_agents": 100,
+    "R": 4,
+    "S": 1,
+    "T": 3,
+    "P": 2,
+    "tag0_initial_ingroup_belief": 0.5,
+    "tag0_initial_outgroup_belief": 0.5,
+    "tag1_initial_ingroup_belief": 0.5,
+    "tag1_initial_outgroup_belief": 0.5,
+    "initial_number_of_0_tags": 50,
+    "random_seed": 590087582,
+    "number_of_steps": 10000,
+    "rounds_per_step": 30,
+    "selection_intensity": 1.0,
+    "perturbation_probability": 0.01,
+    "perturbation_scale": 0.05,
+    "data_recording": true,
+    "data_file_path": "test_personal_strategy_ingroup_0.5_outgroup_0.5_seed_590087582.csv",
+    "write_frequency": 200,
+    "choose_strategy": "mixed"
+}
