@@ -12,8 +12,9 @@
     "random_seed": 12345,
     "number_of_episodes":100,
     "number_of_steps": 1000,
-    "rounds_per_step": 100,
-    "data_recording": true,
+    "data_recording": True,
     "data_file_path": "data.csv",
-    "write_frequency": 10
+    "write_frequency": 10,
+    "graph_file_path": "test.json",
+    "choose_strategy": "expected_payoff"
 }
