@@ -17,11 +17,11 @@ def permute(matching, n):
 
 
 class Agent:
-    def __init__(self, tag, ingroup, outgroup, choose_strategy):
+    def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0):
         self.tag = tag
         self.ingroup = ingroup
         self.outgroup = outgroup
-        self.payoff = 0.0
+        self.payoff = payoff
         self.payoff_against_0 = 0.0
         self.payoff_against_1 = 0.0
         self.choose_strategy_func = choose_strategy
@@ -172,7 +172,8 @@ class Model:
             new_agents.append(
                 Agent(self.agents[current_agent_index].tag,
                       current_agent_new_ingroup, current_agent_new_outgroup,
-                      self.agents[current_agent_index].choose_strategy_func))
+                      self.agents[current_agent_index].choose_strategy_func),
+                      self.agents[current_agent_index].payoff)
 
         self.agents = new_agents
 
