@@ -1,9 +1,9 @@
 {
     "number_of_agents": 10,
-    "R": -1,
-    "S": -3,
-    "T": 0,
-    "P": -2,
+    "R": 4,
+    "S": 1,
+    "T": 3,
+    "P": 2,
     "tag0_initial_ingroup_belief": 1.0,
     "tag0_initial_outgroup_belief": 0.0,
     "tag1_initial_ingroup_belief": 1.0,
@@ -12,9 +12,9 @@
     "random_seed": 12345,
     "number_of_episodes":100,
     "number_of_steps": 1000,
+    "rounds_per_step": 100,
     "data_recording": True,
     "data_file_path": "data.csv",
     "write_frequency": 10,
-    "graph_file_path": "test.json",
     "choose_strategy": "expected_payoff"
 }
