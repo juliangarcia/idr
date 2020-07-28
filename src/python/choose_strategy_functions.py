@@ -1,6 +1,6 @@
 import numpy as np
 
-def choose_strategy_expected_payoff(tag, ingroup, outgroup, game, opponent_tag):
+def choose_strategy_beliefs(tag, ingroup, outgroup, game, opponent_tag):
     if tag == opponent_tag:
         # Ingroup interaction
 
@@ -28,7 +28,7 @@ def choose_strategy_cooperate(tag, ingroup, outgroup, game, opponent_tag):
 def choose_strategy_defect(tag, ingroup, outgroup, game, opponent_tag):
     return 1
 
-def choose_strategy_mixed_strategy(tag, ingroup, outgroup, game, opponent_tag):
+def choose_strategy_direct_action(tag, ingroup, outgroup, game, opponent_tag):
 
     if tag == opponent_tag:
         # Ingroup interaction
@@ -43,8 +43,8 @@ def choose_strategy_mixed_strategy(tag, ingroup, outgroup, game, opponent_tag):
     return strategy
 
 choose_strategy_map = {
-    "expected_payoff": choose_strategy_expected_payoff,
+    "beliefs": choose_strategy_beliefs,
     "cooperate": choose_strategy_cooperate,
     "defect": choose_strategy_defect,
-    "mixed": choose_strategy_mixed_strategy
+    "direct_action": choose_strategy_direct_action
 }

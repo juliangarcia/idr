@@ -18,5 +18,5 @@
     "data_recording": true,
     "data_file_path": "data.csv",
     "write_frequency": 10,
-    "choose_strategy": "mixed"
+    "choose_strategy": "direct_action"
 }
