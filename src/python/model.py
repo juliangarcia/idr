@@ -69,18 +69,6 @@ class Policy():
         self.current_state = 0
 
     def select_action(self):
-        # Find current state
-        if self.belief == "ingroup":
-            if self.agent.tag == 0:
-                self.current_state = [self.current_belief, self.agent.payoff_against_0]
-            else:
-                self.current_state = [self.current_belief, self.agent.payoff_against_1]
-        else:
-            if self.agent.tag == 0:
-                self.current_state = [self.current_belief, self.agent.payoff_against_1]
-            else:
-                self.current_state = [self.current_belief, self.agent.payoff_against_0]
-
         # Select action
         predicted_action = self.policy.predict(
             self.current_state).detach().numpy()
@@ -96,8 +84,20 @@ class Policy():
             experimental_action = np.random.uniform(size=1)
             self.current_action = experimental_action[0]
 
-    def update_reward(self, reward):
-        self.current_reward = reward
+    def update_reward(self):
+        if self.belief == "ingroup":
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_0
+            else:
+                self.current_reward = self.agent.payoff_against_1
+        else:
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_1
+            else:
+                self.current_reward = self.agent.payoff_against_0
+
+        # current state = [ current in/outgroup belief, current payoff aginst 0/1]
+        self.current_state = [self.current_action, self.current_reward]
 
         # make updates
         self.states.append(self.current_state)
@@ -109,23 +109,23 @@ class Policy():
             self.agent.ingroup = self.current_action
         else:
             self.agent.outgroup = self.current_action
+
         self.current_belief = self.current_action
 
-    def record_starting_state(self, reward):
-        self.current_reward = reward
-        self.current_action = self.current_belief
-
-        # Find current state
+    def record_starting_state(self):
         if self.belief == "ingroup":
             if self.agent.tag == 0:
-                self.current_state = [self.current_belief, self.agent.payoff_against_0]
+                self.current_reward = self.agent.payoff_against_0
             else:
-                self.current_state = [self.current_belief, self.agent.payoff_against_1]
+                self.current_reward = self.agent.payoff_against_1
         else:
             if self.agent.tag == 0:
-                self.current_state = [self.current_belief, self.agent.payoff_against_1]
+                self.current_reward = self.agent.payoff_against_1
             else:
-                self.current_state = [self.current_belief, self.agent.payoff_against_0]
+                self.current_reward = self.agent.payoff_against_0
+
+        self.current_state = [self.current_belief, self.current_reward]
+        self.current_action = self.current_belief
 
         # make updates
         self.states.append(self.current_state)
@@ -185,10 +185,6 @@ class Agent:
         self.payoff_against_1 = 0.0
         self.choose_strategy_func = choose_strategy
         self.choose_strategy = lambda *args: choose_strategy(
-            self.tag, self.ingroup, self.outgroup, *args)
-        reward_strategy = choose_strategy_map["expected_payoff"]
-        self.reward_strategy_func = reward_strategy
-        self.reward_strategy = lambda *args: reward_strategy(
             self.tag, self.ingroup, self.outgroup, *args)
         self.ingroup_policy = Policy(self, "ingroup", 0.99, 0.05)
         self.outgroup_policy = Policy(self, "outgroup", 0.99, 0.05)
@@ -252,20 +248,6 @@ class Model:
         return self.game[choice_focal, choice_other], \
                self.game[choice_other, choice_focal]
 
-    def get_reward(self, agent_focal, belief):
-        # reward based on expected return
-        if belief == "ingroup":
-            choice_focal = agent_focal.reward_strategy(self.game, agent_focal.tag)
-            choice_other = 0 if agent_focal.ingroup > 0.5 else 1
-        else:
-            if agent_focal.tag == 0:
-                choice_focal = agent_focal.reward_strategy(self.game, 1)
-            else:
-                choice_focal = agent_focal.reward_strategy(self.game, 0)
-            choice_other = 0 if agent_focal.outgroup > 0.5 else 1
-
-        return self.game[choice_focal, choice_other]
-
     def compute_payoff(self):
         # self.payoffs = np.zeros(self.number_of_agents)
         for agent in self.agents:
@@ -314,25 +296,21 @@ class Model:
         # include rewards from starting state, important!
         self.compute_payoff()
         for i in range(self.number_of_agents):
-            ingroup_reward = self.get_reward(self.agents[i], "ingroup")
-            self.agents[i].ingroup_policy.record_starting_state(ingroup_reward)
-            outgroup_reward = self.get_reward(self.agents[i], "outgroup")
-            self.agents[i].outgroup_policy.record_starting_state(outgroup_reward)
+            self.agents[i].ingroup_policy.record_starting_state()
+            self.agents[i].outgroup_policy.record_starting_state()
 
         for _ in range(number_of_steps):
             for i in range(self.number_of_agents):
-                # play a round of games
-                self.compute_payoff()
-
                 # select action
                 self.agents[i].ingroup_policy.select_action()
                 self.agents[i].outgroup_policy.select_action()
 
+                # play a round of games
+                self.compute_payoff()
+
                 # update reward and state
-                ingroup_reward = self.get_reward(self.agents[i], "ingroup")
-                outgroup_reward = self.get_reward(self.agents[i], "outgroup")
-                self.agents[i].ingroup_policy.update_reward(ingroup_reward)
-                self.agents[i].outgroup_policy.update_reward(outgroup_reward)
+                self.agents[i].ingroup_policy.update_reward()
+                self.agents[i].outgroup_policy.update_reward()
 
         # update policy
         for i in range(self.number_of_agents):
