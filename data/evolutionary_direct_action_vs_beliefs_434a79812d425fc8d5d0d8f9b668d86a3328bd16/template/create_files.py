@@ -21,7 +21,7 @@ def remplazar(diccionario, nombre_template):
 TEMPLATE_NAME = 'TEMPLATE.json'
 
 beliefs = [0.9, 0.5, 0.1]
-payoff_seps = {'small': (4, 1, 3, 2), 'large': (4, 1, 3, 2)}
+payoff_seps = {'small': (4, 1, 3, 2), 'large': (6, 1, 3, 2)}
 choose_strategies = ['beliefs', 'direct_action']
 
 def create_filenames():
