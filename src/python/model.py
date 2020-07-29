@@ -5,6 +5,7 @@ import json
 import sys
 import networkx as nx
 import matplotlib.pyplot as plt
+from choose_strategy_functions import *
 
 @jit(nopython=True)
 def permute(matching, n):
@@ -15,11 +16,24 @@ def permute(matching, n):
         matching[j] = temp
 
 
+class Agent:
+    def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0):
+        self.tag = tag
+        self.ingroup = ingroup
+        self.outgroup = outgroup
+        self.payoff = payoff
+        self.payoff_against_0 = 0.0
+        self.payoff_against_1 = 0.0
+        self.choose_strategy_func = choose_strategy
+        self.choose_strategy = lambda *args: choose_strategy(
+            self.tag, self.ingroup, self.outgroup, *args)
+
+
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags, graph):
+                 initial_number_of_0_tags, graph, choose_strategy):
 
         # 0 is cooperate
         # 1 is defect
@@ -38,17 +52,16 @@ class Model:
         # these contain probabilities that the in-out group
         # will play strategy 0 - cooperate
 
-        self.tags = np.ones(number_of_agents, dtype=int)
-        self.ingroup = np.full(number_of_agents, tag1_initial_ingroup_belief, dtype=float)
-        self.outgroup = np.full(number_of_agents, tag1_initial_outgroup_belief, dtype=float)
+        self.agents = [
+            Agent(1,
+                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
+                  choose_strategy)
+            for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
-            self.tags[i] = 0
-            self.ingroup[i] = tag0_initial_ingroup_belief
-            self.outgroup[i] = tag0_initial_outgroup_belief
-
-        self.matching_indices = list(range(self.number_of_agents))
-        self.payoffs = np.zeros(number_of_agents, dtype=float)
+            self.agents[i].tag = 0
+            self.agents[i].ingroup = tag0_initial_ingroup_belief
+            self.agents[i].outgroup = tag0_initial_outgroup_belief
 
         # Create graph
         self.graph = graph
@@ -64,64 +77,49 @@ class Model:
             with_labels=True)
         plt.show()
 
-    def encounter(self, index_focal, index_other):
-        assert 0 <= index_focal < self.number_of_agents
-        assert 0 <= index_other < self.number_of_agents
-        assert index_focal != index_other
+    def encounter(self, agent_focal, agent_other):
+        # assert 0 <= index_focal < self.number_of_agents
+        # assert 0 <= index_other < self.number_of_agents
+        # assert index_focal != index_other
 
-        if self.tags[index_focal] == self.tags[index_other]:
-            # ingroup interaction
+        choice_focal = agent_focal.choose_strategy(self.game, agent_other.tag)
+        choice_other = agent_other.choose_strategy(self.game, agent_focal.tag)
 
-            # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
-                                                                  1.0 - self.ingroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
-                                                                  1.0 - self.ingroup[index_focal]]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
-                                                                  1.0 - self.ingroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
-                                                                  1.0 - self.ingroup[index_other]]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
-
-        else:
-            # outgroup interaction
-
-            # choice focal
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
-                                                                  1.0 - self.outgroup[index_focal]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
-                                                                  1.0 - self.outgroup[index_focal]]))
-            choice_focal = 0 if choice_0_value > choice_1_value else 1
-
-            # choice other
-            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
-                                                                  1.0 - self.outgroup[index_other]]))
-            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
-                                                                  1.0 - self.outgroup[index_other]]))
-            choice_other = 0 if choice_0_value > choice_1_value else 1
-
-            return self.game[choice_focal, choice_other], \
-                   self.game[choice_other, choice_focal]
+        return self.game[choice_focal, choice_other], \
+               self.game[choice_other, choice_focal]
 
     def compute_payoff(self):
-        self.payoffs = np.zeros(self.number_of_agents)
+        # self.payoffs = np.zeros(self.number_of_agents)
+        for agent in self.agents:
+            agent.payoff = 0.0
+            agent.payoff_against_0 = 0.0
+            agent.payoff_against_1 = 0.0
 
-        for focal_agent in range(self.number_of_agents):
-            if len(self.graph.adj[focal_agent].keys()) > 0:
+        for focal_agent_index in range(self.number_of_agents):
+            if len(self.graph.adj[focal_agent_index].keys()) > 0:
 
-                neighbours = [nbr for nbr in self.graph.adj[focal_agent].keys()]
+                neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
 
-                for neighbour in neighbours:
-                    payoff_focal, _ = self.encounter(focal_agent, neighbour)
-                    self.payoffs[focal_agent] = self.payoffs[focal_agent] + \
-                        payoff_focal
-                self.payoffs[focal_agent] = self.payoffs[focal_agent] / \
-                    len(neighbours)
+                games_played_against_0 = 0
+                games_played_against_1 = 0
+
+                for neighbour_index in neighbours:
+                    payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
+
+                    self.agents[focal_agent_index].payoff += payoff_focal
+
+                    if self.agents[neighbour_index].tag == 0:
+                        games_played_against_0 += 1
+                        self.agents[focal_agent_index].payoff_against_0 += payoff_focal
+                    else:
+                        games_played_against_1 += 1
+                        self.agents[focal_agent_index].payoff_against_1 += payoff_focal
+
+                self.agents[focal_agent_index].payoff /= len(neighbours)
+                if games_played_against_0 > 0:
+                    self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                if games_played_against_1 > 0:
+                    self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
     def step(self, selection_intensity, perturbation_probability=0.05,
              perturbation_scale=0.05):
@@ -129,15 +127,14 @@ class Model:
         # Compute the current payoff
         self.compute_payoff()
 
-        new_ingroup = []
-        new_outgroup = []
+        new_agents = []
 
-        for current_agent in range(self.number_of_agents):
+        for current_agent_index in range(self.number_of_agents):
             neighbourhood = [nbr for nbr in
-                             self.graph.adj[current_agent].keys()]
-            neighbourhood.append(current_agent)
+                             self.graph.adj[current_agent_index].keys()]
+            neighbourhood.append(current_agent_index)
 
-            neighbourhood_payoffs = np.array([self.payoffs[i]
+            neighbourhood_payoffs = np.array([self.agents[i].payoff
                                               for i in neighbourhood])
 
             neighbourhood_fitness_sum = np.sum(np.exp(
@@ -147,32 +144,38 @@ class Model:
                 selection_intensity*neighbourhood_payoffs) / \
                 neighbourhood_fitness_sum
 
-            agent_to_imitate = np.random.choice(neighbourhood,
-                                                p=neighbourhood_probabilities)
+            agent_to_imitate_index = np.random.choice(
+                neighbourhood, p=neighbourhood_probabilities)
 
             if np.random.rand() <= perturbation_probability:
                 current_agent_new_ingroup = np.random.normal(
-                    self.ingroup[agent_to_imitate], perturbation_scale)
+                    self.agents[agent_to_imitate_index].ingroup,
+                    perturbation_scale)
                 if current_agent_new_ingroup < 0:
                     current_agent_new_ingroup = 0.0
                 if current_agent_new_ingroup > 1:
                     current_agent_new_ingroup = 1.0
 
                 current_agent_new_outgroup = np.random.normal(
-                    self.outgroup[agent_to_imitate], perturbation_scale)
+                    self.agents[agent_to_imitate_index].outgroup,
+                    perturbation_scale)
                 if current_agent_new_outgroup < 0:
                     current_agent_new_outgroup = 0.0
                 if current_agent_new_outgroup > 1:
                     current_agent_new_outgroup = 1.0
             else:
-                current_agent_new_ingroup = self.ingroup[agent_to_imitate]
-                current_agent_new_outgroup = self.outgroup[agent_to_imitate]
+                current_agent_new_ingroup = self.agents[agent_to_imitate_index]\
+                    .ingroup
+                current_agent_new_outgroup = self.agents[agent_to_imitate_index]\
+                    .outgroup
 
-            new_ingroup.append(current_agent_new_ingroup)
-            new_outgroup.append(current_agent_new_outgroup)
+            new_agents.append(
+                Agent(self.agents[current_agent_index].tag,
+                      current_agent_new_ingroup, current_agent_new_outgroup,
+                      self.agents[current_agent_index].choose_strategy_func,
+                      self.agents[current_agent_index].payoff))
 
-        self.ingroup = np.array(new_ingroup)
-        self.outgroup = np.array(new_outgroup)
+        self.agents = new_agents
 
     def run_simulation(self, random_seed, number_of_steps,
                        selection_intensity, perturbation_probability,
@@ -184,6 +187,10 @@ class Model:
         if data_recording:
             with open(data_file_path, 'w', newline='\n') as output_file:
                 writer = csv.writer(output_file)
+                header_list = ["T"] + ["P" + str(i) for i in range(self.number_of_agents)] + \
+                              ["I" + str(i) for i in range(self.number_of_agents)] + \
+                              ["O" + str(i) for i in range(self.number_of_agents)]
+                writer.writerow(header_list)
 
                 for current_step in range(number_of_steps):
                     self.step(selection_intensity,
@@ -191,9 +198,16 @@ class Model:
 
                     if current_step % write_frequency == 0 \
                             or current_step == number_of_steps - 1:
-                        writer.writerow(np.append(self.payoffs,
-                                                  np.append(self.ingroup,
-                                                            self.outgroup)))
+                        payoffs = np.array([agent.payoff
+                                            for agent in self.agents])
+                        ingroup = np.array([agent.ingroup
+                                            for agent in self.agents])
+                        outgroup = np.array([agent.outgroup
+                                             for agent in self.agents])
+                        writer.writerow(np.append([current_step],
+                                            np.append(payoffs,
+                                                  np.append(ingroup,
+                                                            outgroup))))
         else:
             for _ in range(number_of_steps):
                 self.step(selection_intensity,
@@ -213,7 +227,8 @@ def main(config_file_path):
                   config["tag1_initial_ingroup_belief"],
                   config["tag1_initial_outgroup_belief"],
                   config["initial_number_of_0_tags"],
-                  graph)
+                  graph,
+                  choose_strategy_map[config["choose_strategy"]])
     model.run_simulation(config["random_seed"], config["number_of_steps"],
                          config["selection_intensity"],
                          config["perturbation_probability"],
