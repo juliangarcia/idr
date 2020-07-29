@@ -100,7 +100,7 @@ districts_3 = [[6, 2, 2, 2],
 
 #gerrymandered_graph(24, 12, districts_2, 100)
 
-def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount):
+def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount, add_amount):
 
     tags = np.ones(number_of_agents, dtype=int)
     for i in range(initial_number_of_0_tags):
@@ -136,6 +136,23 @@ def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amo
         F.add_edge(edge1[0], edge2[1])
         F.add_edge(edge2[0], edge1[1])
 
+    for _ in range(add_amount):
+        edges_F = [edge for edge in F.edges]
+        nodes_G = [node for node in G.nodes]
+        nodes_H = [node for node in H.nodes]
+        node1 = nodes_G[np.random.choice(range(len(nodes_G)))]
+        node2 = nodes_H[np.random.choice(range(len(nodes_H)))]
+
+        while (node1, node2) in edges_F or \
+              (node2, node1) in edges_F:
+            node1 = nodes_G[np.random.choice(range(len(nodes_G)))]
+            node2 = nodes_H[np.random.choice(range(len(nodes_H)))]
+
+        direction = np.random.choice(2)
+        if direction == 0:
+            F.add_edge(node1, node2)
+        else:
+            F.add_edge(node2, node1)
 
     nx.draw(F, with_labels=True)
     plt.show()
@@ -143,8 +160,7 @@ def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amo
     with open("graph.json", 'w') as out_file:
         json.dump(nx.readwrite.json_graph.node_link_data(F), out_file, indent=4)
 
-
-#Two_communities_graph(40, 10, 4)
+#Two_communities_graph(10,5,0,3)
 
 def Scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, gamma):
     
