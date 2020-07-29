@@ -3,19 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
+def draw_graph_circular(graph, number_of_agents, number_of_0_tags):
+        agent_0_colour = "#ff0000" # Red
+        agent_1_colour = "#0000ff" # Blue
+        nx.drawing.nx_pylab.draw_networkx(
+            graph, pos=nx.drawing.layout.circular_layout(graph),
+            nodelist=[i for i in range(number_of_agents)],
+            node_color=[agent_0_colour if i < number_of_0_tags else
+                        agent_1_colour for i in range(number_of_agents)],
+            with_labels=True)
+        plt.show()
 
 
-def gerrymandered_graph(rewire_amount):
-    number_of_agents = 24
-    initial_number_of_0_tags = number_of_agents//2
+def gerrymandered_graph(number_of_agents, number_of_0_tags, districts, rewire_amount):
 
     tags = np.ones(number_of_agents, dtype=int)
 
-    for i in range(initial_number_of_0_tags):
+    for i in range(number_of_0_tags):
         tags[i] = 0
-
-    districts = [[3, 3, 3, 3],
-                 [3, 3, 3, 3]]
 
     district_assignment = [0 for _ in range(number_of_agents)]
 
@@ -23,14 +28,14 @@ def gerrymandered_graph(rewire_amount):
     G.add_nodes_from([i for i in range(number_of_agents)])
 
     for current_agent in range(number_of_agents):
-        if current_agent < initial_number_of_0_tags:
+        if current_agent < number_of_0_tags:
             current_agent_tag = 0
         else:
             current_agent_tag = 1
 
-        district = np.random.randint(0, 4)
+        district = np.random.randint(0, len(districts[0]))
         while districts[current_agent_tag][district] == 0:
-            district = np.random.randint(0, 4)
+            district = np.random.randint(0, len(districts[0]))
 
         district_assignment[current_agent] = district
         districts[current_agent_tag][district] -= 1
@@ -45,13 +50,13 @@ def gerrymandered_graph(rewire_amount):
         edge1 = edges[np.random.choice(range(len(edges)))]
         edge2 = edges[np.random.choice(range(len(edges)))]
 
-        while tags[edge1[1]] != tags[edge2[1]] or \
-                edge1[1] == edge2[1] or \
-                edge1[0] == edge2[0] or \
-                edge1[0] == edge2[1] or \
-                edge2[0] == edge1[1] or \
-                (edge1[0], edge2[1]) in edges or \
-                (edge2[0], edge1[1]) in edges:
+        while (tags[edge1[1]] != tags[edge2[1]] or # make sure target group is the same
+                edge1[1] == edge2[1] or # make sure targets are not the same
+                edge1[0] == edge2[0] or # make sure origins are not the same
+                edge1[0] == edge2[1] or # make sure target of edge2 is not origin of edge 1
+                edge2[0] == edge1[1] or # make sure target of edge1 is not origin of edge 2
+                (edge1[0], edge2[1]) in edges or # make sure swapped edges do not already exist
+                (edge2[0], edge1[1]) in edges):
             edge1 = edges[np.random.choice(range(len(edges)))]
             edge2 = edges[np.random.choice(range(len(edges)))]
 
@@ -60,14 +65,21 @@ def gerrymandered_graph(rewire_amount):
         G.add_edge(edge1[0], edge2[1])
         G.add_edge(edge2[0], edge1[1])
 
-    nx.draw(G, with_labels=True)
-    plt.show()
+    draw_graph_circular(G, number_of_agents, number_of_0_tags)
 
     with open("graph.json", 'w') as out_file:
         json.dump(nx.readwrite.json_graph.node_link_data(G), out_file, indent=4)
 
 
-#gerrymandered_graph(100)
+# Some districts for 24 agents. Source: https://doi.org/10.1038/s41586-019-1507-6
+districts_1 = [[3, 3, 3, 3],
+               [3, 3, 3, 3]]
+districts_2 = [[5, 4, 2, 1],
+                [1, 2, 4,5]]
+districts_3 = [[6, 2, 2, 2],
+               [0, 4, 4, 4]]
+
+#gerrymandered_graph(24, 12, districts_2, 100)
 
 def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount):
 
