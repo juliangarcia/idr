@@ -305,8 +305,10 @@ class Model:
                               ["O" + str(i) for i in range(self.number_of_agents)]
                 writer.writerow(header_list)
 
+                time_step = 0
                 for current_ep in range(number_of_episodes):
                     self.reinforce(number_of_steps, rounds_per_step)
+                    time_step += number_of_steps
 
                     if current_ep % write_frequency == 0 \
                         or current_ep == number_of_episodes - 1:
@@ -316,7 +318,7 @@ class Model:
                                             for agent in self.agents])
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
-                        writer.writerow(np.append([current_ep],
+                        writer.writerow(np.append([time_step],
                                                   np.append(payoffs,
                                                             np.append(ingroup,
                                                                       outgroup))))
