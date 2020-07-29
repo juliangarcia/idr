@@ -67,4 +67,51 @@ def gerrymandered_graph(rewire_amount):
         json.dump(nx.readwrite.json_graph.node_link_data(G), out_file, indent=4)
 
 
-gerrymandered_graph(100)
+#gerrymandered_graph(100)
+
+def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount):
+
+    tags = np.ones(number_of_agents, dtype=int)
+    for i in range(initial_number_of_0_tags):
+        tags[i] = 0
+
+    G = nx.complete_graph(initial_number_of_0_tags)
+    nx.to_directed(G)
+    H = nx.complete_graph(list(range(initial_number_of_0_tags, number_of_agents)))
+    nx.to_directed(H)
+
+    F = nx.disjoint_union(G,H)
+
+    for _ in range(rewire_amount):
+        edges_F = [edge for edge in F.edges]
+        edges_G = [edge for edge in G.edges]
+        edges_H = [edge for edge in H.edges]
+        edge1 = edges_G[np.random.choice(range(len(edges_G)))]
+        edge2 = edges_H[np.random.choice(range(len(edges_H)))]
+
+        while edge1 not in edges_F or \
+              edge2 not in edges_F or \
+              edge1[1] == edge2[1] or \
+                edge1[0] == edge2[0] or \
+                edge1[0] == edge2[1] or \
+                edge2[0] == edge1[1] or \
+                (edge1[0], edge2[1]) in edges_F or \
+                (edge2[0], edge1[1]) in edges_F:
+            edge1 = edges_G[np.random.choice(range(len(edges_G)))]
+            edge2 = edges_H[np.random.choice(range(len(edges_H)))]
+
+        F.remove_edge(*edge1)
+        F.remove_edge(*edge2)
+        F.add_edge(edge1[0], edge2[1])
+        F.add_edge(edge2[0], edge1[1])
+
+
+    nx.draw(F, with_labels=True)
+    plt.show()
+
+    with open("graph.json", 'w') as out_file:
+        json.dump(nx.readwrite.json_graph.node_link_data(F), out_file, indent=4)
+
+
+#Two_communities_graph(40, 10, 4)
+
