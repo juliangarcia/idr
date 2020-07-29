@@ -115,3 +115,21 @@ def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amo
 
 #Two_communities_graph(40, 10, 4)
 
+def Scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, gamma):
+    
+    assert alpha + beta + gamma == 1
+
+    tags = np.ones(number_of_agents, dtype=int)
+    for i in range(initial_number_of_0_tags):
+        tags[i] = 0
+
+    G = nx.scale_free_graph(number_of_agents, alpha, beta, gamma)
+    nx.to_directed(G)
+
+    nx.draw(G, with_labels=True)
+    plt.show()
+
+    with open("graph.json", 'w') as out_file:
+        json.dump(nx.readwrite.json_graph.node_link_data(G), out_file, indent=4)
+
+#Scale_free_graph(20, 5, 0.41, 0.54, 0.05)
