@@ -2,6 +2,25 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+from numba import jit
+
+@jit(nopython=True)
+def permute(matching, n):
+    for i in range(n-1):
+        j = i + np.random.randint(n-i)
+        temp = matching[i]
+        matching[i] = matching[j]
+        matching[j] = temp
+
+def randomly_relabel(graph):
+    permuted_nodes = list(graph.nodes)
+    permute(permuted_nodes, len(permuted_nodes))
+    relabel_dict = dict(zip(list(graph.nodes), permuted_nodes))
+    new_edges = [(relabel_dict[source], relabel_dict[target]) for source, target in list(graph.edges())]
+
+    graph.remove_edges_from(list(graph.edges()))
+    graph.add_edges_from(new_edges)
+    nx.relabel.relabel_nodes(graph, relabel_dict)
 
 def draw_graph_circular(graph, number_of_agents, number_of_0_tags):
         agent_0_colour = "#ff0000" # Red
