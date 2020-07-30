@@ -1,0 +1,23 @@
+{
+    "number_of_agents": 24,
+    "R": 4,
+    "S": 1,
+    "T": 3,
+    "P": 2,
+    "tag0_initial_ingroup_belief": 0.9,
+    "tag0_initial_outgroup_belief": 0.9,
+    "tag1_initial_ingroup_belief": 0.9,
+    "tag1_initial_outgroup_belief": 0.9,
+    "initial_number_of_0_tags": 12,
+    "random_seed": 213352339,
+    "number_of_steps": 10000,
+    "rounds_per_step": 30,
+    "selection_intensity": 1.0,
+    "perturbation_probability": 0.01,
+    "perturbation_scale": 0.05,
+    "data_recording": true,
+    "data_file_path": "test_evo_graphs_chooseStrategy_direct_action_graph_gerrymandered_ingroup_0.9_outgroup_0.9_seed_213352339.csv",
+    "write_frequency": 200,
+    "graph_file_path": "gerrymandered.json",
+    "choose_strategy": "direct_action"
+}
