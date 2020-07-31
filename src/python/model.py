@@ -58,6 +58,8 @@ class Policy():
             self.beliefs = [self.agent.outgroup]
             self.current_belief = self.agent.outgroup
 
+        self.initial_belief = self.current_belief
+
         self.avg_rewards = 0
 
         self.states = []
@@ -84,6 +86,28 @@ class Policy():
             experimental_action = np.random.uniform(size=1)
             self.current_action = experimental_action[0]
 
+    def select_action_pretraining(self):
+        if self.belief == "ingroup":
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_0
+            else:
+                self.current_reward = self.agent.payoff_against_1
+        else:
+            if self.agent.tag == 0:
+                self.current_reward = self.agent.payoff_against_1
+            else:
+                self.current_reward = self.agent.payoff_against_0
+
+        self.current_state = [self.current_belief, self.current_reward]
+        # Select action
+        predicted_action = self.policy.predict(
+            self.current_state).detach().numpy()
+        self.current_action = predicted_action[0]
+        if self.current_action >= 1:
+            self.current_action = 0.99
+        if self.current_action <= 0:
+            self.current_action = 0.01
+
     def update_reward(self):
         if self.belief == "ingroup":
             if self.agent.tag == 0:
@@ -96,13 +120,13 @@ class Policy():
             else:
                 self.current_reward = self.agent.payoff_against_0
 
-        # current state = [ current in/outgroup belief, current payoff aginst 0/1]
-        self.current_state = [self.current_action, self.current_reward]
-
         # make updates
         self.states.append(self.current_state)
         self.rewards.append(self.current_reward)
         self.actions.append(self.current_action)
+
+        # update state
+        self.current_state = [self.current_action, self.current_reward]
 
         # update agent class
         if self.belief == "ingroup":
@@ -126,11 +150,6 @@ class Policy():
 
         self.current_state = [self.current_belief, self.current_reward]
         self.current_action = self.current_belief
-
-        # make updates
-        self.states.append(self.current_state)
-        self.rewards.append(self.current_reward)
-        self.actions.append(self.current_action)
 
     def discount_rewards(self, rewards):
         r = np.array([self.gamma ** i * rewards[i]
@@ -176,24 +195,26 @@ class Policy():
         self.beliefs.append(self.current_belief)
 
 class Agent:
-    def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0):
+    def __init__(self, tag, ingroup, outgroup, choose_strategy, gamma, epsilon, payoff=0.0):
         self.tag = tag
         self.ingroup = ingroup
         self.outgroup = outgroup
+        self.initial_ingroup = ingroup
+        self.initial_outgroup = outgroup
         self.payoff = payoff
         self.payoff_against_0 = 0.0
         self.payoff_against_1 = 0.0
         self.choose_strategy_func = choose_strategy
         self.choose_strategy = lambda *args: choose_strategy(
             self.tag, self.ingroup, self.outgroup, *args)
-        self.ingroup_policy = Policy(self, "ingroup", 0.99, 0.05)
-        self.outgroup_policy = Policy(self, "outgroup", 0.99, 0.05)
+        self.ingroup_policy = Policy(self, "ingroup", gamma, epsilon)
+        self.outgroup_policy = Policy(self, "outgroup", gamma, epsilon)
 
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags, graph, choose_strategy):
+                 initial_number_of_0_tags, graph, choose_strategy, gamma, epsilon):
 
         # 0 is cooperate
         # 1 is defect
@@ -215,7 +236,7 @@ class Model:
         self.agents = [
             Agent(1,
                   tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                  choose_strategy)
+                  choose_strategy, gamma, epsilon)
             for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
@@ -281,6 +302,45 @@ class Model:
                 if games_played_against_1 > 0:
                     self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
+    def pre_training(self, number_of_pretraining_episodes, number_of_pretraining_steps):
+        for ep in range(number_of_pretraining_episodes):
+            # reset all agents states, rewards, actions sequences
+            for i in range(self.number_of_agents):
+                self.agents[i].ingroup_policy.states = []
+                self.agents[i].ingroup_policy.rewards = []
+                self.agents[i].ingroup_policy.actions = []
+                self.agents[i].outgroup_policy.states = []
+                self.agents[i].outgroup_policy.rewards = []
+                self.agents[i].outgroup_policy.actions = []
+
+            for _ in range(number_of_pretraining_steps):
+                self.compute_payoff()
+                for i in range(self.number_of_agents):
+                    self.agents[i].ingroup_policy.record_starting_state()
+                    self.agents[i].outgroup_policy.record_starting_state()
+
+                    # select action
+                    self.agents[i].ingroup_policy.select_action_pretraining()
+                    self.agents[i].outgroup_policy.select_action_pretraining()
+
+                    # play a round of games to compute reward of new action
+                    self.compute_payoff()
+
+                    # update reward and state
+                    self.agents[i].ingroup_policy.update_reward()
+                    self.agents[i].outgroup_policy.update_reward()
+
+                    # reset belief to initial belief (pretraining only)
+                    self.agents[i].ingroup = self.agents[i].initial_ingroup
+                    self.agents[i].outgroup = self.agents[i].initial_outgroup
+                    self.agents[i].ingroup_policy.current_belief = self.agents[i].initial_ingroup
+                    self.agents[i].outgroup_policy.current_belief = self.agents[i].initial_outgroup
+
+            # update policy
+            for i in range(self.number_of_agents):
+                self.agents[i].ingroup_policy.update_policy()
+                self.agents[i].outgroup_policy.update_policy()
+
     def reinforce(self, number_of_steps):
         # this is a single episode so run multiple times (i.e. 100)
 
@@ -317,7 +377,8 @@ class Model:
             self.agents[i].ingroup_policy.update_policy()
             self.agents[i].outgroup_policy.update_policy()
 
-    def run_simulation(self, random_seed, number_of_episodes, number_of_steps,
+    def run_simulation(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
+                       number_of_episodes, number_of_steps,
                        data_recording, data_file_path, write_frequency):
 
         np.random.seed(random_seed)
@@ -331,8 +392,11 @@ class Model:
                               ["O" + str(i) for i in range(self.number_of_agents)]
                 writer.writerow(header_list)
 
+                time_step = 0
+                self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps)
                 for current_episode in range(number_of_episodes):
                     self.reinforce(number_of_steps)
+                    time_step += number_of_steps
 
                     if current_episode % write_frequency == 0 \
                             or current_episode == number_of_episodes - 1:
@@ -342,11 +406,14 @@ class Model:
                                             for agent in self.agents])
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
-                        writer.writerow(np.append([current_episode],
+                        writer.writerow(np.append([time_step],
                                             np.append(payoffs,
                                                   np.append(ingroup,
                                                             outgroup))))
         else:
+            self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps)
+            print("Finsihed pre-training")
+
             # create arrays to store the average in/outgroup beliefs of the tag groups
             ingroup_0 = np.zeros(number_of_episodes+1, dtype=float)
             ingroup_1 = np.zeros(number_of_episodes+1, dtype=float)
@@ -377,7 +444,7 @@ class Model:
             outgroup_0 = outgroup_0/self.number_of_0_tags
             ingroup_1 = ingroup_1/(self.number_of_agents-self.number_of_0_tags)
             outgroup_1 = outgroup_1/(self.number_of_agents-self.number_of_0_tags)
-            #plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
+            plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
             return ingroup_0, outgroup_0, ingroup_1, outgroup_1
 
 def plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1):
@@ -437,49 +504,17 @@ def main(config_file_path):
                   config["tag1_initial_outgroup_belief"],
                   config["initial_number_of_0_tags"],
                   graph,
-                  choose_strategy_map[config["choose_strategy"]])
+                  choose_strategy_map[config["choose_strategy"]],
+                  config["gamma"],
+                  config["epsilon"])
     model.run_simulation(config["random_seed"],
+                         config["number_of_pretraining_episodes"],
+                         config["number_of_pretraining_steps"],
                          config["number_of_episodes"],
                          config["number_of_steps"],
                          config["data_recording"],
                          config["data_file_path"],
                          config["write_frequency"])
-
-def set_example(seed):
-    with open("graph.json") as graph_file:
-        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
-    model = Model(24,
-                  4, 1,
-                  3, 2,
-                  0.9,
-                  0.9,
-                  0.9,
-                  0.9,
-                  12,
-                  graph,
-                  choose_strategy_map["expected_payoff"])
-    return model.run_simulation(seed, 100, 100, False, "data.csv", 10)
-
-def mc_set_example():
-    mc_ingroup_0 = np.zeros(101, dtype=float)
-    mc_ingroup_1 = np.zeros(101, dtype=float)
-    mc_outgroup_0 = np.zeros(101, dtype=float)
-    mc_outgroup_1 = np.zeros(101, dtype=float)
-
-    for i in range(10):
-        seed = np.random.randint(0, 1000)
-        ingroup_0, outgroup_0, ingroup_1, outgroup_1 = set_example(seed)
-        mc_ingroup_0 += ingroup_0
-        mc_ingroup_1 += ingroup_1
-        mc_outgroup_0 += outgroup_0
-        mc_outgroup_1 += outgroup_1
-
-    mc_ingroup_0 /= 10
-    mc_ingroup_1 /= 10
-    mc_outgroup_0 /= 10
-    mc_outgroup_1 /= 10
-
-    plot_results(mc_ingroup_0, mc_outgroup_0, mc_ingroup_1, mc_outgroup_1)
 
 if __name__ == "__main__":
     main(sys.argv[1])
