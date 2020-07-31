@@ -383,7 +383,7 @@ class Model:
                           perturbation_probability, perturbation_scale)
 
     ################# Evolutionary on a Network #########################
-    def compute_payoff_evo_network(self):
+    def compute_payoff_network(self):
             # self.payoffs = np.zeros(self.number_of_agents)
             for agent in self.agents:
                 agent.payoff = 0.0
@@ -420,7 +420,7 @@ class Model:
              perturbation_scale=0.05):
 
         # Compute the current payoff
-        self.compute_payoff_evo_network()
+        self.compute_payoff_network()
 
         new_agents = []
 
@@ -710,6 +710,153 @@ class Model:
             # plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
             return ingroup_0, outgroup_0, ingroup_1, outgroup_1
 
+    ######## Reinforcement Learning Model on a Network #########
+
+    def pre_training_RL_network(self, number_of_pretraining_episodes, number_of_pretraining_steps):
+        for ep in range(number_of_pretraining_episodes):
+            # reset all agents states, rewards, actions sequences
+            for i in range(self.number_of_agents):
+                self.agents[i].ingroup_policy.states = []
+                self.agents[i].ingroup_policy.rewards = []
+                self.agents[i].ingroup_policy.actions = []
+                self.agents[i].outgroup_policy.states = []
+                self.agents[i].outgroup_policy.rewards = []
+                self.agents[i].outgroup_policy.actions = []
+
+            for _ in range(number_of_pretraining_steps):
+                self.compute_payoff_network()
+                for i in range(self.number_of_agents):
+                    self.agents[i].ingroup_policy.record_starting_state()
+                    self.agents[i].outgroup_policy.record_starting_state()
+
+                    # select action
+                    self.agents[i].ingroup_policy.select_action_pretraining()
+                    self.agents[i].outgroup_policy.select_action_pretraining()
+
+                    # play a round of games to compute reward of new action
+                    self.compute_payoff_network()
+
+                    # update reward and state
+                    self.agents[i].ingroup_policy.update_reward()
+                    self.agents[i].outgroup_policy.update_reward()
+
+                    # reset belief to initial belief (pretraining only)
+                    self.agents[i].ingroup = self.agents[i].initial_ingroup
+                    self.agents[i].outgroup = self.agents[i].initial_outgroup
+                    self.agents[i].ingroup_policy.current_belief = self.agents[i].initial_ingroup
+                    self.agents[i].outgroup_policy.current_belief = self.agents[i].initial_outgroup
+
+            # update policy
+            for i in range(self.number_of_agents):
+                self.agents[i].ingroup_policy.update_policy()
+                self.agents[i].outgroup_policy.update_policy()
+
+    def reinforce_RL_network(self, number_of_steps):
+        # this is a single episode so run multiple times (i.e. 100)
+
+        # reset all agents states, rewards, actions sequences
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.states = []
+            self.agents[i].ingroup_policy.rewards = []
+            self.agents[i].ingroup_policy.actions = []
+            self.agents[i].outgroup_policy.states = []
+            self.agents[i].outgroup_policy.rewards = []
+            self.agents[i].outgroup_policy.actions = []
+
+        # include rewards from starting state, important!
+        self.compute_payoff_network()
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.record_starting_state()
+            self.agents[i].outgroup_policy.record_starting_state()
+
+        for _ in range(number_of_steps):
+            for i in range(self.number_of_agents):
+                # select action
+                self.agents[i].ingroup_policy.select_action()
+                self.agents[i].outgroup_policy.select_action()
+
+                # play a round of games
+                self.compute_payoff_network()
+
+                # update reward and state
+                self.agents[i].ingroup_policy.update_reward()
+                self.agents[i].outgroup_policy.update_reward()
+
+        # update policy
+        for i in range(self.number_of_agents):
+            self.agents[i].ingroup_policy.update_policy()
+            self.agents[i].outgroup_policy.update_policy()
+
+    def run_simulation(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
+                       number_of_episodes, number_of_steps,
+                       data_recording, data_file_path, write_frequency):
+
+        np.random.seed(random_seed)
+        torch.manual_seed(random_seed)
+
+        if data_recording:
+            with open(data_file_path, 'w', newline='\n') as output_file:
+                writer = csv.writer(output_file)
+                header_list = ["T"] + ["P" + str(i) for i in range(self.number_of_agents)] + \
+                              ["I" + str(i) for i in range(self.number_of_agents)] + \
+                              ["O" + str(i) for i in range(self.number_of_agents)]
+                writer.writerow(header_list)
+
+                time_step = 0
+                self.pre_training_RL_network(number_of_pretraining_episodes, number_of_pretraining_steps)
+                for current_episode in range(number_of_episodes):
+                    self.reinforce_RL_network(number_of_steps)
+                    time_step += number_of_steps
+
+                    if current_episode % write_frequency == 0 \
+                            or current_episode == number_of_episodes - 1:
+                        payoffs = np.array([agent.payoff
+                                            for agent in self.agents])
+                        ingroup = np.array([agent.ingroup
+                                            for agent in self.agents])
+                        outgroup = np.array([agent.outgroup
+                                             for agent in self.agents])
+                        writer.writerow(np.append([time_step],
+                                            np.append(payoffs,
+                                                  np.append(ingroup,
+                                                            outgroup))))
+        else:
+            self.pre_training_RL_network(number_of_pretraining_episodes, number_of_pretraining_steps)
+            print("Finsihed pre-training")
+
+            # create arrays to store the average in/outgroup beliefs of the tag groups
+            ingroup_0 = np.zeros(number_of_episodes+1, dtype=float)
+            ingroup_1 = np.zeros(number_of_episodes+1, dtype=float)
+            outgroup_0 = np.zeros(number_of_episodes+1, dtype=float)
+            outgroup_1 = np.zeros(number_of_episodes+1, dtype=float)
+
+            # include initial beliefs
+            for i in range(self.number_of_0_tags):
+                ingroup_0[0] += self.agents[i].ingroup
+                outgroup_0[0] += self.agents[i].outgroup
+            for i in range(self.number_of_0_tags, self.number_of_agents):
+                ingroup_1[0] += self.agents[i].ingroup
+                outgroup_1[0] += self.agents[i].outgroup
+
+            # run the model and after each episode record the average beliefs
+            for j in range(number_of_episodes):
+                self.reinforce_RL_network(number_of_steps)
+                print("Episode ", str(j+1))
+
+                for i in range(self.number_of_0_tags):
+                    ingroup_0[j+1] += self.agents[i].ingroup
+                    outgroup_0[j+1] += self.agents[i].outgroup
+                for i in range(self.number_of_0_tags, self.number_of_agents):
+                    ingroup_1[j+1] += self.agents[i].ingroup
+                    outgroup_1[j+1] += self.agents[i].outgroup
+
+            ingroup_0 = ingroup_0/self.number_of_0_tags
+            outgroup_0 = outgroup_0/self.number_of_0_tags
+            ingroup_1 = ingroup_1/(self.number_of_agents-self.number_of_0_tags)
+            outgroup_1 = outgroup_1/(self.number_of_agents-self.number_of_0_tags)
+            # plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
+            return ingroup_0, outgroup_0, ingroup_1, outgroup_1
+
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
@@ -757,6 +904,23 @@ def main(config_file_path):
                          config["number_of_episodes"],
                          config["number_of_steps"],
                          config["rounds_per_step"],
+                         config["data_recording"],
+                         config["data_file_path"],
+                         config["write_frequency"])
+    
+    if config["model_type"] == 'RL_network':
+        graph_func = graph_function_map[config["graph_type"]]
+        graph = graph_func(config["number_of_agents"], config["initial_number_of_0_tags"])
+        
+        with open(config["graph_file_path"], 'w') as out_file:
+            json.dump(nx.readwrite.json_graph.node_link_data(graph), out_file, indent=4)
+
+        model = model_call(graph, config["gamma"], config["epsilon"])
+        model.run_simulation(config["random_seed"],
+                         config["number_of_pretraining_episodes"],
+                         config["number_of_pretraining_steps"],
+                         config["number_of_episodes"],
+                         config["number_of_steps"],
                          config["data_recording"],
                          config["data_file_path"],
                          config["write_frequency"])
