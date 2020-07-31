@@ -3,6 +3,7 @@ from numba import jit
 import csv
 import json
 import sys
+import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -12,8 +13,8 @@ from choose_strategy_functions import *
 
 @jit(nopython=True)
 def permute(matching, n):
-    for i in range(n - 1):
-        j = i + np.random.randint(n - i)
+    for i in range(n-1):
+        j = i + np.random.randint(n-i)
         temp = matching[i]
         matching[i] = matching[j]
         matching[j] = temp
@@ -209,12 +210,11 @@ class Agent:
         self.ingroup_policy = Policy(self, "ingroup", gamma, epsilon)
         self.outgroup_policy = Policy(self, "outgroup", gamma, epsilon)
 
-
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                 initial_number_of_0_tags, choose_strategy, gamma, epsilon):
+                 initial_number_of_0_tags, graph, choose_strategy, gamma, epsilon):
 
         # 0 is cooperate
         # 1 is defect
@@ -244,7 +244,19 @@ class Model:
             self.agents[i].ingroup = tag0_initial_ingroup_belief
             self.agents[i].outgroup = tag0_initial_outgroup_belief
 
-        self.matching_indices = list(range(self.number_of_agents))
+        # Create graph
+        self.graph = graph
+
+    def draw_graph(self):
+        agent_0_colour = "#ff0000" # Red
+        agent_1_colour = "#0000ff" # Blue
+        nx.drawing.nx_pylab.draw_networkx(
+            self.graph, pos=nx.drawing.layout.circular_layout(self.graph),
+            nodelist=[i for i in range(self.number_of_agents)],
+            node_color=[agent_0_colour if i < self.number_of_0_tags else
+                        agent_1_colour for i in range(self.number_of_agents)],
+            with_labels=True)
+        plt.show()
 
     def encounter(self, agent_focal, agent_other):
         # assert 0 <= index_focal < self.number_of_agents
@@ -254,61 +266,43 @@ class Model:
         choice_focal = agent_focal.choose_strategy(self.game, agent_other.tag)
         choice_other = agent_other.choose_strategy(self.game, agent_focal.tag)
 
-        return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+        return self.game[choice_focal, choice_other], \
+               self.game[choice_other, choice_focal]
 
-    def compute_payoff(self, samples):
+    def compute_payoff(self):
         # self.payoffs = np.zeros(self.number_of_agents)
         for agent in self.agents:
             agent.payoff = 0.0
             agent.payoff_against_0 = 0.0
             agent.payoff_against_1 = 0.0
 
-        games_against_0 = np.zeros(self.number_of_agents)
-        games_against_1 = np.zeros(self.number_of_agents)
+        for focal_agent_index in range(self.number_of_agents):
+            if len(self.graph.adj[focal_agent_index].keys()) > 0:
 
-        for _ in range(samples):
-            #np.random.shuffle(self.matching_indices)
-            permute(self.matching_indices, self.number_of_agents)
-            for i in range(0, self.number_of_agents, 2):
-                focal_index = self.matching_indices[i]
-                other_index = self.matching_indices[i + 1]
-                payoff_focal, payoff_other = self.encounter(self.agents[focal_index], self.agents[other_index])
-                self.agents[focal_index].payoff += payoff_focal
-                self.agents[other_index].payoff += payoff_other
+                neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
 
-                if self.agents[focal_index].tag == 0:
-                    if self.agents[other_index].tag == 0:
-                        games_against_0[focal_index] += 1
-                        games_against_0[other_index] += 1
-                        self.agents[focal_index].payoff_against_0 += payoff_focal
-                        self.agents[other_index].payoff_against_0 += payoff_other
+                games_played_against_0 = 0
+                games_played_against_1 = 0
+
+                for neighbour_index in neighbours:
+                    payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
+
+                    self.agents[focal_agent_index].payoff += payoff_focal
+
+                    if self.agents[neighbour_index].tag == 0:
+                        games_played_against_0 += 1
+                        self.agents[focal_agent_index].payoff_against_0 += payoff_focal
                     else:
-                        games_against_1[focal_index] += 1
-                        games_against_0[other_index] += 1
-                        self.agents[focal_index].payoff_against_1 += payoff_focal
-                        self.agents[other_index].payoff_against_0 += payoff_other
-                else:
-                    if self.agents[other_index].tag == 0:
-                        games_against_0[focal_index] += 1
-                        games_against_1[other_index] += 1
-                        self.agents[focal_index].payoff_against_0 += payoff_focal
-                        self.agents[other_index].payoff_against_1 += payoff_other
-                    else:
-                        games_against_1[focal_index] += 1
-                        games_against_1[other_index] += 1
-                        self.agents[focal_index].payoff_against_1 += payoff_focal
-                        self.agents[other_index].payoff_against_1 += payoff_other
+                        games_played_against_1 += 1
+                        self.agents[focal_agent_index].payoff_against_1 += payoff_focal
 
-        for i in range(len(self.agents)):
-            agent = self.agents[i]
-            agent.payoff /= samples
-            if games_against_0[i] != 0:
-                agent.payoff_against_0 /= games_against_0[i]
-            if games_against_1[i] != 0:
-                agent.payoff_against_1 /= games_against_1[i]
+                self.agents[focal_agent_index].payoff /= len(neighbours)
+                if games_played_against_0 > 0:
+                    self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                if games_played_against_1 > 0:
+                    self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
-
-    def pre_training(self, number_of_pretraining_episodes, number_of_pretraining_steps, rounds_per_step):
+    def pre_training(self, number_of_pretraining_episodes, number_of_pretraining_steps):
         for ep in range(number_of_pretraining_episodes):
             # reset all agents states, rewards, actions sequences
             for i in range(self.number_of_agents):
@@ -320,7 +314,7 @@ class Model:
                 self.agents[i].outgroup_policy.actions = []
 
             for _ in range(number_of_pretraining_steps):
-                self.compute_payoff(rounds_per_step)
+                self.compute_payoff()
                 for i in range(self.number_of_agents):
                     self.agents[i].ingroup_policy.record_starting_state()
                     self.agents[i].outgroup_policy.record_starting_state()
@@ -330,7 +324,7 @@ class Model:
                     self.agents[i].outgroup_policy.select_action_pretraining()
 
                     # play a round of games to compute reward of new action
-                    self.compute_payoff(rounds_per_step)
+                    self.compute_payoff()
 
                     # update reward and state
                     self.agents[i].ingroup_policy.update_reward()
@@ -347,8 +341,7 @@ class Model:
                 self.agents[i].ingroup_policy.update_policy()
                 self.agents[i].outgroup_policy.update_policy()
 
-
-    def reinforce(self, number_of_steps, rounds_per_step):
+    def reinforce(self, number_of_steps):
         # this is a single episode so run multiple times (i.e. 100)
 
         # reset all agents states, rewards, actions sequences
@@ -360,8 +353,8 @@ class Model:
             self.agents[i].outgroup_policy.rewards = []
             self.agents[i].outgroup_policy.actions = []
 
-        # play a starting round of games
-        self.compute_payoff(rounds_per_step)
+        # include rewards from starting state, important!
+        self.compute_payoff()
         for i in range(self.number_of_agents):
             self.agents[i].ingroup_policy.record_starting_state()
             self.agents[i].outgroup_policy.record_starting_state()
@@ -373,7 +366,7 @@ class Model:
                 self.agents[i].outgroup_policy.select_action()
 
                 # play a round of games
-                self.compute_payoff(rounds_per_step)
+                self.compute_payoff()
 
                 # update reward and state
                 self.agents[i].ingroup_policy.update_reward()
@@ -386,8 +379,7 @@ class Model:
 
     def run_simulation(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
                        number_of_episodes, number_of_steps,
-                       rounds_per_step, data_recording, data_file_path,
-                       write_frequency):
+                       data_recording, data_file_path, write_frequency):
 
         np.random.seed(random_seed)
         torch.manual_seed(random_seed)
@@ -395,21 +387,19 @@ class Model:
         if data_recording:
             with open(data_file_path, 'w', newline='\n') as output_file:
                 writer = csv.writer(output_file)
-
                 header_list = ["T"] + ["P" + str(i) for i in range(self.number_of_agents)] + \
                               ["I" + str(i) for i in range(self.number_of_agents)] + \
                               ["O" + str(i) for i in range(self.number_of_agents)]
                 writer.writerow(header_list)
 
                 time_step = 0
-                self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps,
-                             rounds_per_step)
-                for current_ep in range(number_of_episodes):
-                    self.reinforce(number_of_steps, rounds_per_step)
+                self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps)
+                for current_episode in range(number_of_episodes):
+                    self.reinforce(number_of_steps)
                     time_step += number_of_steps
 
-                    if current_ep % write_frequency == 0 \
-                        or current_ep == number_of_episodes - 1:
+                    if current_episode % write_frequency == 0 \
+                            or current_episode == number_of_episodes - 1:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
@@ -417,19 +407,18 @@ class Model:
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
                         writer.writerow(np.append([time_step],
-                                                  np.append(payoffs,
-                                                            np.append(ingroup,
-                                                                      outgroup))))
+                                            np.append(payoffs,
+                                                  np.append(ingroup,
+                                                            outgroup))))
         else:
-            self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps,
-                         rounds_per_step)
+            self.pre_training(number_of_pretraining_episodes, number_of_pretraining_steps)
             print("Finsihed pre-training")
 
             # create arrays to store the average in/outgroup beliefs of the tag groups
-            ingroup_0 = np.zeros(number_of_episodes + 1, dtype=float)
-            ingroup_1 = np.zeros(number_of_episodes + 1, dtype=float)
-            outgroup_0 = np.zeros(number_of_episodes + 1, dtype=float)
-            outgroup_1 = np.zeros(number_of_episodes + 1, dtype=float)
+            ingroup_0 = np.zeros(number_of_episodes+1, dtype=float)
+            ingroup_1 = np.zeros(number_of_episodes+1, dtype=float)
+            outgroup_0 = np.zeros(number_of_episodes+1, dtype=float)
+            outgroup_1 = np.zeros(number_of_episodes+1, dtype=float)
 
             # include initial beliefs
             for i in range(self.number_of_0_tags):
@@ -441,20 +430,20 @@ class Model:
 
             # run the model and after each episode record the average beliefs
             for j in range(number_of_episodes):
-                self.reinforce(number_of_steps, rounds_per_step)
-                print("Episode ", str(j + 1))
+                self.reinforce(number_of_steps)
+                print("Episode ", str(j+1))
 
                 for i in range(self.number_of_0_tags):
-                    ingroup_0[j + 1] += self.agents[i].ingroup
-                    outgroup_0[j + 1] += self.agents[i].outgroup
+                    ingroup_0[j+1] += self.agents[i].ingroup
+                    outgroup_0[j+1] += self.agents[i].outgroup
                 for i in range(self.number_of_0_tags, self.number_of_agents):
-                    ingroup_1[j + 1] += self.agents[i].ingroup
-                    outgroup_1[j + 1] += self.agents[i].outgroup
+                    ingroup_1[j+1] += self.agents[i].ingroup
+                    outgroup_1[j+1] += self.agents[i].outgroup
 
-            ingroup_0 = ingroup_0 / self.number_of_0_tags
-            outgroup_0 = outgroup_0 / self.number_of_0_tags
-            ingroup_1 = ingroup_1 / (self.number_of_agents - self.number_of_0_tags)
-            outgroup_1 = outgroup_1 / (self.number_of_agents - self.number_of_0_tags)
+            ingroup_0 = ingroup_0/self.number_of_0_tags
+            outgroup_0 = outgroup_0/self.number_of_0_tags
+            ingroup_1 = ingroup_1/(self.number_of_agents-self.number_of_0_tags)
+            outgroup_1 = outgroup_1/(self.number_of_agents-self.number_of_0_tags)
             plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
             return ingroup_0, outgroup_0, ingroup_1, outgroup_1
 
@@ -471,7 +460,7 @@ def plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1):
     ax1.set_ylabel('Belief')
     ax1.set_ylim([0,1])
 
-    rolling_mean2 = pd.Series(outgroup_0).rolling(window).mean()
+    rolling_mean2 = pd.Series(ingroup_0).rolling(window).mean()
     std2 = pd.Series(outgroup_0).rolling(window).std()
     ax2.plot(rolling_mean2)
     ax2.fill_between(range(len(outgroup_0)), rolling_mean2 - std2, rolling_mean2 + std2, color='orange', alpha=0.2)
@@ -504,6 +493,8 @@ def plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1):
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
+    with open(config["graph_file_path"]) as graph_file:
+        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
     model = Model(config["number_of_agents"],
                   config["R"], config["S"],
                   config["T"], config["P"],
@@ -512,6 +503,7 @@ def main(config_file_path):
                   config["tag1_initial_ingroup_belief"],
                   config["tag1_initial_outgroup_belief"],
                   config["initial_number_of_0_tags"],
+                  graph,
                   choose_strategy_map[config["choose_strategy"]],
                   config["gamma"],
                   config["epsilon"])
@@ -520,7 +512,6 @@ def main(config_file_path):
                          config["number_of_pretraining_steps"],
                          config["number_of_episodes"],
                          config["number_of_steps"],
-                         config["rounds_per_step"],
                          config["data_recording"],
                          config["data_file_path"],
                          config["write_frequency"])
