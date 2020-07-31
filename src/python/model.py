@@ -6,14 +6,7 @@ import sys
 import networkx as nx
 import matplotlib.pyplot as plt
 from choose_strategy_functions import *
-
-@jit(nopython=True)
-def permute(matching, n):
-    for i in range(n-1):
-        j = i + np.random.randint(n-i)
-        temp = matching[i]
-        matching[i] = matching[j]
-        matching[j] = temp
+from graph_generation import *
 
 
 class Agent:
@@ -217,8 +210,10 @@ class Model:
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
         config = json.load(config_file)
-    with open(config["graph_file_path"]) as graph_file:
-        graph = nx.readwrite.json_graph.node_link_graph(json.load(graph_file))
+    graph_func = graph_function_map[config["graph_type"]]
+    graph = graph_func(config["number_of_agents"], config["initial_number_of_0_tags"])
+    with open(config["graph_file_path"], 'w') as out_file:
+        json.dump(nx.readwrite.json_graph.node_link_data(graph), out_file, indent=4)
     model = Model(config["number_of_agents"],
                   config["R"], config["S"],
                   config["T"], config["P"],

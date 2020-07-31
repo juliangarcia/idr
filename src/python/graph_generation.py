@@ -22,6 +22,8 @@ def randomly_relabel(graph):
     graph.add_edges_from(new_edges)
     nx.relabel.relabel_nodes(graph, relabel_dict)
 
+    return graph
+
 def draw_graph_circular(graph, number_of_agents, number_of_0_tags):
         agent_0_colour = "#ff0000" # Red
         agent_1_colour = "#0000ff" # Blue
@@ -84,11 +86,7 @@ def gerrymandered_graph(number_of_agents, number_of_0_tags, districts, rewire_am
         G.add_edge(edge1[0], edge2[1])
         G.add_edge(edge2[0], edge1[1])
 
-    draw_graph_circular(G, number_of_agents, number_of_0_tags)
-
-    with open("graph.json", 'w') as out_file:
-        json.dump(nx.readwrite.json_graph.node_link_data(G), out_file, indent=4)
-
+    return G
 
 # Some districts for 24 agents. Source: https://doi.org/10.1038/s41586-019-1507-6
 districts_1 = [[3, 3, 3, 3],
@@ -98,9 +96,7 @@ districts_2 = [[5, 4, 2, 1],
 districts_3 = [[6, 2, 2, 2],
                [0, 4, 4, 4]]
 
-#gerrymandered_graph(24, 12, districts_2, 100)
-
-def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount, add_amount):
+def two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amount, add_amount):
 
     tags = np.ones(number_of_agents, dtype=int)
     for i in range(initial_number_of_0_tags):
@@ -154,15 +150,9 @@ def Two_communities_graph(number_of_agents, initial_number_of_0_tags, rewire_amo
         else:
             F.add_edge(node2, node1)
 
-    nx.draw(F, with_labels=True)
-    plt.show()
+    return F
 
-    with open("graph.json", 'w') as out_file:
-        json.dump(nx.readwrite.json_graph.node_link_data(F), out_file, indent=4)
-
-#Two_communities_graph(10,5,0,3)
-
-def Scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, gamma):
+def scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, gamma):
     
     assert alpha + beta + gamma == 1
 
@@ -173,10 +163,9 @@ def Scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, ga
     G = nx.scale_free_graph(number_of_agents, alpha, beta, gamma)
     nx.to_directed(G)
 
-    nx.draw(G, with_labels=True)
-    plt.show()
+    return G
 
-    with open("graph.json", 'w') as out_file:
-        json.dump(nx.readwrite.json_graph.node_link_data(G), out_file, indent=4)
-
-#Scale_free_graph(20, 5, 0.41, 0.54, 0.05)
+graph_function_map = {
+    "scale_free": lambda number_of_agents, number_of_0_tags: randomly_relabel(scale_free_graph(number_of_agents, number_of_0_tags, 0.41, 0.54, 0.05)),
+    "two_communities": lambda number_of_agents, number_of_0_tags: two_communities_graph(number_of_agents, number_of_0_tags, number_of_agents//2, number_of_agents//2)
+}

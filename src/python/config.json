@@ -17,6 +17,7 @@
     "data_recording": true,
     "data_file_path": "data.csv",
     "write_frequency": 10,
+    "graph_type": "scale_free",
     "graph_file_path": "test.json",
     "choose_strategy": "beliefs"
 }
