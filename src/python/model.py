@@ -38,9 +38,9 @@ class Policy_Network():
         return action
 
 class Policy():
-    def __init__(self, agent, belief, gamma, epsilon):
+    def __init__(self, agent, belief, gamma, epsilon, learning_rate):
         self.policy = Policy_Network()
-        self.optimizer = optim.Adam(self.policy.network.parameters(), lr=0.01)
+        self.optimizer = optim.Adam(self.policy.network.parameters(), lr=learning_rate)
 
         self.gamma = gamma
         self.epsilon = epsilon
@@ -197,7 +197,7 @@ class Policy():
 
 class Agent:
     def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0,
-                 gamma=None, epsilon=None):
+                 gamma=None, epsilon=None, learning_rate=None):
         self.tag = tag
         self.ingroup = ingroup
         self.outgroup = outgroup
@@ -209,8 +209,8 @@ class Agent:
         self.choose_strategy_func = choose_strategy
         self.choose_strategy = lambda *args: choose_strategy(
             self.tag, self.ingroup, self.outgroup, *args)
-        self.ingroup_policy = Policy(self, "ingroup", gamma, epsilon)
-        self.outgroup_policy = Policy(self, "outgroup", gamma, epsilon)
+        self.ingroup_policy = Policy(self, "ingroup", gamma, epsilon, learning_rate)
+        self.outgroup_policy = Policy(self, "outgroup", gamma, epsilon, learning_rate)
 
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
@@ -218,7 +218,7 @@ class Model:
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
                  initial_number_of_0_tags, choose_strategy,
                  graph=None,
-                 gamma=None, epsilon=None):
+                 gamma=None, epsilon=None, learning_rate=None):
 
         # 0 is cooperate
         # 1 is defect
@@ -237,7 +237,7 @@ class Model:
         self.agents = [
             Agent(1,
                   tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
-                  choose_strategy, gamma=gamma, epsilon=epsilon)
+                  choose_strategy, gamma=gamma, epsilon=epsilon, learning_rate=learning_rate)
             for _ in range(self.number_of_agents)]
 
         for i in range(self.number_of_0_tags):
@@ -897,7 +897,7 @@ def main(config_file_path):
                          config["data_file_path"], config["write_frequency"])
     
     if config["model_type"] == 'RL':
-        model = model_call(None, config["gamma"], config["epsilon"])
+        model = model_call(None, config["gamma"], config["epsilon"], config["learning_rate"])
         model.run_simulation_RL(config["random_seed"],
                          config["number_of_pretraining_episodes"],
                          config["number_of_pretraining_steps"],
@@ -915,7 +915,7 @@ def main(config_file_path):
         with open(config["graph_file_path"], 'w') as out_file:
             json.dump(nx.readwrite.json_graph.node_link_data(graph), out_file, indent=4)
 
-        model = model_call(graph, config["gamma"], config["epsilon"])
+        model = model_call(graph, config["gamma"], config["epsilon"], config["learning_rate"])
         model.run_simulation(config["random_seed"],
                          config["number_of_pretraining_episodes"],
                          config["number_of_pretraining_steps"],

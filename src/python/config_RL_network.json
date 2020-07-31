@@ -22,5 +22,6 @@
     "write_frequency": 10,
     "choose_strategy": "beliefs",
     "gamma": 0.99,
-    "epsilon": 0.05
+    "epsilon": 0.05,
+    "learning_rate": 0.01
 }
