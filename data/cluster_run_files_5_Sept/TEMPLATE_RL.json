@@ -18,7 +18,7 @@
     "rounds_per_step": 10,
     "data_recording": true,
     "data_file_path": "OUTPUT_FILE_NAME",
-    "write_frequency": 10,
+    "write_frequency": 100,
     "choose_strategy": "STRATEGY",
     "gamma": 0.99,
     "epsilon": 0.05,
