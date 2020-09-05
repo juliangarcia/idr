@@ -18,6 +18,6 @@
     "perturbation_scale": 0.05,
     "data_recording": true,
     "data_file_path": "OUTPUT_FILE_NAME",
-    "write_frequency": 10,
+    "write_frequency": 100,
     "choose_strategy": "STRATEGY"
 }
