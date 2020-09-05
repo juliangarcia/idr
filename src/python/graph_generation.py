@@ -168,4 +168,5 @@ def scale_free_graph(number_of_agents, initial_number_of_0_tags, alpha, beta, ga
 graph_function_map = {
     "scale_free": lambda number_of_agents, number_of_0_tags: randomly_relabel(scale_free_graph(number_of_agents, number_of_0_tags, 0.41, 0.54, 0.05)),
     "two_communities": lambda number_of_agents, number_of_0_tags: two_communities_graph(number_of_agents, number_of_0_tags, number_of_agents//2, number_of_agents//2)
+    "gerrymandered": lambda number_of_agents, number_of_0_tags: gerrymandered_graph(number_of_agents, number_of_0_tags, [[3, 3, 3, 3],[3, 3, 3, 3]], number_of_agents//2)
 }
