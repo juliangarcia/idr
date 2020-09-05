@@ -40,7 +40,7 @@ def create_filenames():
                 for payoff_sep in payoff_seps:
                     for ingroup in beliefs:
                         for outgroup in beliefs:
-                            for _ in range(5):
+                            for _ in range(50):
                                 seed = np.random.randint(999999999)
                                 ans_network.append(blueprint.format(model_type, graph_type, choose_strategy, payoff_sep, ingroup, outgroup, seed))
 
@@ -51,7 +51,7 @@ def create_filenames():
             for payoff_sep in payoff_seps:
                 for ingroup in beliefs:
                     for outgroup in beliefs:
-                        for _ in range(5):
+                        for _ in range(50):
                             seed = np.random.randint(999999999)
                             ans.append(blueprint.format(model_type, choose_strategy, payoff_sep, ingroup, outgroup, seed))
 
