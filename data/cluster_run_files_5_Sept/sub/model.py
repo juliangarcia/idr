@@ -23,7 +23,7 @@ from graph_generation import *
 class Policy_Network():
     def __init__(self):
         self.n_inputs = 2  # agent's belief, payoff
-        self.n_outputs = 1 # new belief
+        self.n_outputs = 1  # new belief
 
         # Define network
         self.network = nn.Sequential(
@@ -31,14 +31,16 @@ class Policy_Network():
             nn.ReLU(),
             nn.Linear(16, self.n_outputs),
             nn.ReLU())
-            #nn.Softmax(dim=-1))
+        # nn.Softmax(dim=-1))
 
     def predict(self, state):
         action = self.network(torch.FloatTensor(state))
         return action
 
+
 class Policy():
-    def __init__(self, agent, belief, gamma, epsilon, learning_rate):
+    def __init__(self, agent, belief, gamma, epsilon, learning_rate=0.01):
+        learning_rate = 0.01
         self.policy = Policy_Network()
         self.optimizer = optim.Adam(self.policy.network.parameters(), lr=learning_rate)
 
@@ -195,6 +197,7 @@ class Policy():
 
         self.beliefs.append(self.current_belief)
 
+
 class Agent:
     def __init__(self, tag, ingroup, outgroup, choose_strategy, payoff=0.0,
                  gamma=None, epsilon=None, learning_rate=None):
@@ -212,13 +215,14 @@ class Agent:
         self.ingroup_policy = Policy(self, "ingroup", gamma, epsilon, learning_rate)
         self.outgroup_policy = Policy(self, "outgroup", gamma, epsilon, learning_rate)
 
+
 class Model:
     def __init__(self, number_of_agents, R, S, T, P,
                  tag0_initial_ingroup_belief, tag0_initial_outgroup_belief,
                  tag1_initial_ingroup_belief, tag1_initial_outgroup_belief,
                  initial_number_of_0_tags, choose_strategy,
                  graph=None,
-                 gamma=None, epsilon=None, learning_rate=None):
+                 gamma=None, epsilon=None, learning_rate=0.01):
 
         # 0 is cooperate
         # 1 is defect
@@ -251,8 +255,8 @@ class Model:
 
     def draw_graph(self):
         assert self.graph != None, "No graph available"
-        agent_0_colour = "#ff0000" # Red
-        agent_1_colour = "#0000ff" # Blue
+        agent_0_colour = "#ff0000"  # Red
+        agent_1_colour = "#0000ff"  # Blue
         nx.drawing.nx_pylab.draw_networkx(
             self.graph, pos=nx.drawing.layout.circular_layout(self.graph),
             nodelist=[i for i in range(self.number_of_agents)],
@@ -279,18 +283,19 @@ class Model:
 
         for _ in range(samples):
             permute(self.matching_indices, self.number_of_agents)
+            #np.random.shuffle(self.matching_indices)
             for i in range(0, self.number_of_agents, 2):
                 focal_index = self.matching_indices[i]
                 other_index = self.matching_indices[i + 1]
                 payoff_focal, payoff_other = self.encounter(self.agents[focal_index], self.agents[other_index])
                 self.agents[focal_index].payoff += payoff_focal
                 self.agents[other_index].payoff += payoff_other
-        
+
         for agent in self.agents:
             agent.payoff /= samples
 
     def step_evo(self, samples, selection_intensity, perturbation_probability=0.05,
-             perturbation_scale=0.05):
+                 perturbation_scale=0.05):
 
         # Compute the current payoff
         self.compute_payoff_evo(samples)
@@ -300,11 +305,11 @@ class Model:
         payoff_0 = np.array([agent.payoff for agent in self.agents[0:self.number_of_0_tags]])
         payoff_1 = np.array([agent.payoff for agent in self.agents[self.number_of_0_tags:]])
 
-        payoff_sum_0 = np.sum(np.exp(selection_intensity*payoff_0))
-        payoff_sum_1 = np.sum(np.exp(selection_intensity*payoff_1))
+        payoff_sum_0 = np.sum(np.exp(selection_intensity * payoff_0))
+        payoff_sum_1 = np.sum(np.exp(selection_intensity * payoff_1))
 
-        fitness_probabilities_0 = np.exp(selection_intensity*payoff_0)/payoff_sum_0
-        fitness_probabilities_1 = np.exp(selection_intensity*payoff_1)/payoff_sum_1
+        fitness_probabilities_0 = np.exp(selection_intensity * payoff_0) / payoff_sum_0
+        fitness_probabilities_1 = np.exp(selection_intensity * payoff_1) / payoff_sum_1
 
         new_agents = []
 
@@ -313,10 +318,10 @@ class Model:
         for i in range(self.number_of_agents):
             if i < self.number_of_0_tags:
                 current_agent_index = np.random.choice(range(self.number_of_0_tags),
-                                                 p=fitness_probabilities_0)
+                                                       p=fitness_probabilities_0)
             else:
                 current_agent_index = np.random.choice(range(self.number_of_0_tags, self.number_of_agents),
-                                                 p=fitness_probabilities_1)
+                                                       p=fitness_probabilities_1)
 
             # Perturb agents belief
             if np.random.rand() <= perturbation_probability:
@@ -346,10 +351,9 @@ class Model:
         self.agents = new_agents
 
     def run_simulation_evo(self, random_seed, number_of_steps, rounds_per_step,
-                       selection_intensity, perturbation_probability,
-                       perturbation_scale, data_recording,
-                       data_file_path, write_frequency):
-
+                           selection_intensity, perturbation_probability,
+                           perturbation_scale, data_recording,
+                           data_file_path, write_frequency):
         np.random.seed(random_seed)
 
         if data_recording:
@@ -363,10 +367,10 @@ class Model:
 
                 for current_step in range(number_of_steps):
                     self.step_evo(rounds_per_step, selection_intensity,
-                              perturbation_probability, perturbation_scale)
+                                  perturbation_probability, perturbation_scale)
 
                     if current_step % write_frequency == 0 \
-                            or current_step == number_of_steps - 1:
+                        or current_step == number_of_steps - 1:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
@@ -374,50 +378,50 @@ class Model:
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
                         writer.writerow(np.append([current_step],
-                                            np.append(payoffs,
-                                                  np.append(ingroup,
-                                                            outgroup))))
+                                                  np.append(payoffs,
+                                                            np.append(ingroup,
+                                                                      outgroup))))
         else:
             for _ in range(number_of_steps):
                 self.step_evo(rounds_per_step, selection_intensity,
-                          perturbation_probability, perturbation_scale)
+                              perturbation_probability, perturbation_scale)
 
     ################# Evolutionary on a Network #########################
     def compute_payoff_network(self):
-            # self.payoffs = np.zeros(self.number_of_agents)
-            for agent in self.agents:
-                agent.payoff = 0.0
-                agent.payoff_against_0 = 0.0
-                agent.payoff_against_1 = 0.0
+        # self.payoffs = np.zeros(self.number_of_agents)
+        for agent in self.agents:
+            agent.payoff = 0.0
+            agent.payoff_against_0 = 0.0
+            agent.payoff_against_1 = 0.0
 
-            for focal_agent_index in range(self.number_of_agents):
-                if len(self.graph.adj[focal_agent_index].keys()) > 0:
+        for focal_agent_index in range(self.number_of_agents):
+            if len(self.graph.adj[focal_agent_index].keys()) > 0:
 
-                    neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
+                neighbours = [nbr for nbr in self.graph.adj[focal_agent_index].keys()]
 
-                    games_played_against_0 = 0
-                    games_played_against_1 = 0
+                games_played_against_0 = 0
+                games_played_against_1 = 0
 
-                    for neighbour_index in neighbours:
-                        payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
+                for neighbour_index in neighbours:
+                    payoff_focal, _ = self.encounter(self.agents[focal_agent_index], self.agents[neighbour_index])
 
-                        self.agents[focal_agent_index].payoff += payoff_focal
+                    self.agents[focal_agent_index].payoff += payoff_focal
 
-                        if self.agents[neighbour_index].tag == 0:
-                            games_played_against_0 += 1
-                            self.agents[focal_agent_index].payoff_against_0 += payoff_focal
-                        else:
-                            games_played_against_1 += 1
-                            self.agents[focal_agent_index].payoff_against_1 += payoff_focal
+                    if self.agents[neighbour_index].tag == 0:
+                        games_played_against_0 += 1
+                        self.agents[focal_agent_index].payoff_against_0 += payoff_focal
+                    else:
+                        games_played_against_1 += 1
+                        self.agents[focal_agent_index].payoff_against_1 += payoff_focal
 
-                    self.agents[focal_agent_index].payoff /= len(neighbours)
-                    if games_played_against_0 > 0:
-                        self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
-                    if games_played_against_1 > 0:
-                        self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
+                self.agents[focal_agent_index].payoff /= len(neighbours)
+                if games_played_against_0 > 0:
+                    self.agents[focal_agent_index].payoff_against_0 /= games_played_against_0
+                if games_played_against_1 > 0:
+                    self.agents[focal_agent_index].payoff_against_1 /= games_played_against_1
 
     def step_evo_network(self, selection_intensity, perturbation_probability=0.05,
-             perturbation_scale=0.05):
+                         perturbation_scale=0.05):
 
         # Compute the current payoff
         self.compute_payoff_network()
@@ -433,11 +437,11 @@ class Model:
                                               for i in neighbourhood])
 
             neighbourhood_fitness_sum = np.sum(np.exp(
-                selection_intensity*neighbourhood_payoffs))
+                selection_intensity * neighbourhood_payoffs))
 
             neighbourhood_probabilities = np.exp(
-                selection_intensity*neighbourhood_payoffs) / \
-                neighbourhood_fitness_sum
+                selection_intensity * neighbourhood_payoffs) / \
+                                          neighbourhood_fitness_sum
 
             agent_to_imitate_index = np.random.choice(
                 neighbourhood, p=neighbourhood_probabilities)
@@ -459,9 +463,9 @@ class Model:
                 if current_agent_new_outgroup > 1:
                     current_agent_new_outgroup = 1.0
             else:
-                current_agent_new_ingroup = self.agents[agent_to_imitate_index]\
+                current_agent_new_ingroup = self.agents[agent_to_imitate_index] \
                     .ingroup
-                current_agent_new_outgroup = self.agents[agent_to_imitate_index]\
+                current_agent_new_outgroup = self.agents[agent_to_imitate_index] \
                     .outgroup
 
             new_agents.append(
@@ -473,9 +477,9 @@ class Model:
         self.agents = new_agents
 
     def run_simulation_evo_network(self, random_seed, number_of_steps,
-                       selection_intensity, perturbation_probability,
-                       perturbation_scale, data_recording,
-                       data_file_path, write_frequency):
+                                   selection_intensity, perturbation_probability,
+                                   perturbation_scale, data_recording,
+                                   data_file_path, write_frequency):
 
         np.random.seed(random_seed)
 
@@ -489,10 +493,10 @@ class Model:
 
                 for current_step in range(number_of_steps):
                     self.step_evo_network(selection_intensity,
-                              perturbation_probability, perturbation_scale)
+                                          perturbation_probability, perturbation_scale)
 
                     if current_step % write_frequency == 0 \
-                            or current_step == number_of_steps - 1:
+                        or current_step == number_of_steps - 1:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
@@ -500,13 +504,13 @@ class Model:
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
                         writer.writerow(np.append([current_step],
-                                            np.append(payoffs,
-                                                  np.append(ingroup,
-                                                            outgroup))))
+                                                  np.append(payoffs,
+                                                            np.append(ingroup,
+                                                                      outgroup))))
         else:
             for _ in range(number_of_steps):
                 self.step_evo_network(selection_intensity,
-                          perturbation_probability, perturbation_scale)
+                                      perturbation_probability, perturbation_scale)
 
     ######## Reinforcement Learning Model on Well Mixed Population #########
 
@@ -637,9 +641,9 @@ class Model:
             self.agents[i].outgroup_policy.update_policy()
 
     def run_simulation_RL(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
-                       number_of_episodes, number_of_steps,
-                       rounds_per_step, data_recording, data_file_path,
-                       write_frequency):
+                          number_of_episodes, number_of_steps,
+                          rounds_per_step, data_recording, data_file_path,
+                          write_frequency):
 
         np.random.seed(random_seed)
         torch.manual_seed(random_seed)
@@ -655,7 +659,7 @@ class Model:
 
                 time_step = 0
                 self.pre_training_RL(number_of_pretraining_episodes, number_of_pretraining_steps,
-                             rounds_per_step)
+                                     rounds_per_step)
                 for current_ep in range(number_of_episodes):
                     self.reinforce_RL(number_of_steps, rounds_per_step)
                     time_step += number_of_steps
@@ -674,7 +678,7 @@ class Model:
                                                                       outgroup))))
         else:
             self.pre_training_RL(number_of_pretraining_episodes, number_of_pretraining_steps,
-                         rounds_per_step)
+                                 rounds_per_step)
             print("Finsihed pre-training")
 
             # create arrays to store the average in/outgroup beliefs of the tag groups
@@ -787,7 +791,7 @@ class Model:
             self.agents[i].ingroup_policy.update_policy()
             self.agents[i].outgroup_policy.update_policy()
 
-    def run_simulation(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
+    def run_simulation_RL_network(self, random_seed, number_of_pretraining_episodes, number_of_pretraining_steps,
                        number_of_episodes, number_of_steps,
                        data_recording, data_file_path, write_frequency):
 
@@ -809,7 +813,7 @@ class Model:
                     time_step += number_of_steps
 
                     if current_episode % write_frequency == 0 \
-                            or current_episode == number_of_episodes - 1:
+                        or current_episode == number_of_episodes - 1:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
@@ -817,18 +821,18 @@ class Model:
                         outgroup = np.array([agent.outgroup
                                              for agent in self.agents])
                         writer.writerow(np.append([time_step],
-                                            np.append(payoffs,
-                                                  np.append(ingroup,
-                                                            outgroup))))
+                                                  np.append(payoffs,
+                                                            np.append(ingroup,
+                                                                      outgroup))))
         else:
             self.pre_training_RL_network(number_of_pretraining_episodes, number_of_pretraining_steps)
             print("Finsihed pre-training")
 
             # create arrays to store the average in/outgroup beliefs of the tag groups
-            ingroup_0 = np.zeros(number_of_episodes+1, dtype=float)
-            ingroup_1 = np.zeros(number_of_episodes+1, dtype=float)
-            outgroup_0 = np.zeros(number_of_episodes+1, dtype=float)
-            outgroup_1 = np.zeros(number_of_episodes+1, dtype=float)
+            ingroup_0 = np.zeros(number_of_episodes + 1, dtype=float)
+            ingroup_1 = np.zeros(number_of_episodes + 1, dtype=float)
+            outgroup_0 = np.zeros(number_of_episodes + 1, dtype=float)
+            outgroup_1 = np.zeros(number_of_episodes + 1, dtype=float)
 
             # include initial beliefs
             for i in range(self.number_of_0_tags):
@@ -841,21 +845,22 @@ class Model:
             # run the model and after each episode record the average beliefs
             for j in range(number_of_episodes):
                 self.reinforce_RL_network(number_of_steps)
-                print("Episode ", str(j+1))
+                print("Episode ", str(j + 1))
 
                 for i in range(self.number_of_0_tags):
-                    ingroup_0[j+1] += self.agents[i].ingroup
-                    outgroup_0[j+1] += self.agents[i].outgroup
+                    ingroup_0[j + 1] += self.agents[i].ingroup
+                    outgroup_0[j + 1] += self.agents[i].outgroup
                 for i in range(self.number_of_0_tags, self.number_of_agents):
-                    ingroup_1[j+1] += self.agents[i].ingroup
-                    outgroup_1[j+1] += self.agents[i].outgroup
+                    ingroup_1[j + 1] += self.agents[i].ingroup
+                    outgroup_1[j + 1] += self.agents[i].outgroup
 
-            ingroup_0 = ingroup_0/self.number_of_0_tags
-            outgroup_0 = outgroup_0/self.number_of_0_tags
-            ingroup_1 = ingroup_1/(self.number_of_agents-self.number_of_0_tags)
-            outgroup_1 = outgroup_1/(self.number_of_agents-self.number_of_0_tags)
+            ingroup_0 = ingroup_0 / self.number_of_0_tags
+            outgroup_0 = outgroup_0 / self.number_of_0_tags
+            ingroup_1 = ingroup_1 / (self.number_of_agents - self.number_of_0_tags)
+            outgroup_1 = outgroup_1 / (self.number_of_agents - self.number_of_0_tags)
             # plot_results(ingroup_0, outgroup_0, ingroup_1, outgroup_1)
             return ingroup_0, outgroup_0, ingroup_1, outgroup_1
+
 
 def main(config_file_path):
     with open(config_file_path, 'r') as config_file:
@@ -863,68 +868,68 @@ def main(config_file_path):
 
     # Setup model call with standardised parameters
     model_call = lambda *args: Model(config["number_of_agents"],
-                  config["R"], config["S"],
-                  config["T"], config["P"],
-                  config["tag0_initial_ingroup_belief"],
-                  config["tag0_initial_outgroup_belief"],
-                  config["tag1_initial_ingroup_belief"],
-                  config["tag1_initial_outgroup_belief"],
-                  config["initial_number_of_0_tags"],
-                  choose_strategy_map[config["choose_strategy"]],
-                  *args)
-
+                                     config["R"], config["S"],
+                                     config["T"], config["P"],
+                                     config["tag0_initial_ingroup_belief"],
+                                     config["tag0_initial_outgroup_belief"],
+                                     config["tag1_initial_ingroup_belief"],
+                                     config["tag1_initial_outgroup_belief"],
+                                     config["initial_number_of_0_tags"],
+                                     choose_strategy_map[config["choose_strategy"]],
+                                     *args)
     if config["model_type"] == 'evo':
         model = model_call()
         model.run_simulation_evo(config["random_seed"], config["number_of_steps"],
-                            config["rounds_per_step"],
-                            config["selection_intensity"],
-                            config["perturbation_probability"],
-                            config["perturbation_scale"], config["data_recording"],
-                            config["data_file_path"], config["write_frequency"])
+                                 config["rounds_per_step"],
+                                 config["selection_intensity"],
+                                 config["perturbation_probability"],
+                                 config["perturbation_scale"], config["data_recording"],
+                                 config["data_file_path"], config["write_frequency"])
 
     if config["model_type"] == 'evo_network':
         graph_func = graph_function_map[config["graph_type"]]
         graph = graph_func(config["number_of_agents"], config["initial_number_of_0_tags"])
-        
+
         with open(config["graph_file_path"], 'w') as out_file:
             json.dump(nx.readwrite.json_graph.node_link_data(graph), out_file, indent=4)
-        
+
         model = model_call(graph)
         model.run_simulation_evo_network(config["random_seed"], config["number_of_steps"],
-                         config["selection_intensity"],
-                         config["perturbation_probability"],
-                         config["perturbation_scale"], config["data_recording"],
-                         config["data_file_path"], config["write_frequency"])
-    
+                                         config["selection_intensity"],
+                                         config["perturbation_probability"],
+                                         config["perturbation_scale"], config["data_recording"],
+                                         config["data_file_path"], config["write_frequency"])
+
     if config["model_type"] == 'RL':
         model = model_call(None, config["gamma"], config["epsilon"], config["learning_rate"])
+
         model.run_simulation_RL(config["random_seed"],
-                         config["number_of_pretraining_episodes"],
-                         config["number_of_pretraining_steps"],
-                         config["number_of_episodes"],
-                         config["number_of_steps"],
-                         config["rounds_per_step"],
-                         config["data_recording"],
-                         config["data_file_path"],
-                         config["write_frequency"])
-    
+                                config["number_of_pretraining_episodes"],
+                                config["number_of_pretraining_steps"],
+                                config["number_of_episodes"],
+                                config["number_of_steps"],
+                                config["rounds_per_step"],
+                                config["data_recording"],
+                                config["data_file_path"],
+                                config["write_frequency"])
+
     if config["model_type"] == 'RL_network':
         graph_func = graph_function_map[config["graph_type"]]
         graph = graph_func(config["number_of_agents"], config["initial_number_of_0_tags"])
-        
+
         with open(config["graph_file_path"], 'w') as out_file:
             json.dump(nx.readwrite.json_graph.node_link_data(graph), out_file, indent=4)
 
         model = model_call(graph, config["gamma"], config["epsilon"], config["learning_rate"])
-        model.run_simulation(config["random_seed"],
-                         config["number_of_pretraining_episodes"],
-                         config["number_of_pretraining_steps"],
-                         config["number_of_episodes"],
-                         config["number_of_steps"],
-                         config["data_recording"],
-                         config["data_file_path"],
-                         config["write_frequency"])
+        model.run_simulation_RL_network(config["random_seed"],
+                             config["number_of_pretraining_episodes"],
+                             config["number_of_pretraining_steps"],
+                             config["number_of_episodes"],
+                             config["number_of_steps"],
+                             config["data_recording"],
+                             config["data_file_path"],
+                             config["write_frequency"])
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    #main(sys.argv[1])
