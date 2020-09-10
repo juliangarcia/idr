@@ -12,13 +12,13 @@ from choose_strategy_functions import *
 from graph_generation import *
 
 
-# @jit(nopython=True)
-# def permute(matching, n):
-#     for i in range(n-1):
-#         j = i + np.random.randint(n-i)
-#         temp = matching[i]
-#         matching[i] = matching[j]
-#         matching[j] = temp
+@jit(nopython=True)
+def permute(matching, n):
+    for i in range(n-1):
+        j = i + np.random.randint(n-i)
+        temp = matching[i]
+        matching[i] = matching[j]
+        matching[j] = temp
 
 class Policy_Network():
     def __init__(self):
@@ -932,4 +932,4 @@ def main(config_file_path):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
+    main(sys.argv[1])
