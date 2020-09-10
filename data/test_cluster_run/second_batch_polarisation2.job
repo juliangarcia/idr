@@ -1,0 +1,12 @@
+#!/bin/env bash
+#SBATCH --job-name=polarisation2
+#SBATCH --time=10:00:00
+#SBATCH --mem=1000
+#SBATCH --array=1-500
+#SBATCH --output=polarisation2.out
+#SBATCH --open-mode=append
+#SBATCH -p amd
+
+module load python/3.7.0
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST | tail -1`
+$CMD
