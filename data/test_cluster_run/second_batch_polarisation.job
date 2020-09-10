@@ -5,6 +5,7 @@
 #SBATCH --array=1-500
 #SBATCH --output=polarisation2.out
 #SBATCH --open-mode=append
+#SBATCH --partition=short
 source /home/fcam0005/p2016020011/idr/data/test_cluster_run/env/bin/activate
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST | tail -1`
 $CMD
