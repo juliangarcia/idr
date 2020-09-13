@@ -242,8 +242,8 @@ graph_function_map = {
 #############################################################################
 
 
-strat_func = choose_strategy_map[config["beliefs"]]
-graph_func = graph_function_map[config["scale_free"]]
+strat_func = choose_strategy_map["beliefs"]
+graph_func = graph_function_map["scale_free"]
 
 data_file_path = "test.csv"
 with open(data_file_path, 'w', newline='\n') as output_file:
