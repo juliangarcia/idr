@@ -18,7 +18,7 @@
     "rounds_per_step": 10,
     "data_recording": true,
     "data_file_path": "model_RL_chooseStrategy_beliefs_payoffSep_small_ingroup_0.9_outgroup_0.9_seed_119895903.csv",
-    "write_frequency": 1,
+    "write_frequency": 10,
     "choose_strategy": "beliefs",
     "gamma": 0.99,
     "epsilon": 0.05,
