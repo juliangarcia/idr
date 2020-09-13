@@ -1,4 +1,3 @@
-
 #!/bin/env bash
 #SBATCH --job-name=polarisation2
 #SBATCH --time=10:00:00
