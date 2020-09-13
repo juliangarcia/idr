@@ -8,7 +8,6 @@
 #SBATCH --partition=short
 
 module load anaconda
-source activate /home/fcam0005/.conda/envs/torch-env
 
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_test | tail -1`
 $CMD
