@@ -889,14 +889,15 @@ class Model:
                 writer.writerow(header_list)
 
                 time_step = 0
+                number_of_total_steps = number_of_episodes*number_of_steps
                 self.pre_training_RL(number_of_pretraining_episodes, number_of_pretraining_steps,
                                      rounds_per_step)
                 for current_ep in range(number_of_episodes):
                     self.reinforce_RL(number_of_steps, rounds_per_step)
                     time_step += number_of_steps
 
-                    if current_ep % write_frequency == 0 \
-                        or current_ep == number_of_episodes - 1:
+                    if time_step % write_frequency == 0 \
+                        or time_step == number_of_total_steps or time_step == number_of_total_steps - 1:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
@@ -1038,13 +1039,14 @@ class Model:
                 writer.writerow(header_list)
 
                 time_step = 0
+                number_of_total_steps = number_of_episodes*number_of_steps
                 self.pre_training_RL_network(number_of_pretraining_episodes, number_of_pretraining_steps)
                 for current_episode in range(number_of_episodes):
                     self.reinforce_RL_network(number_of_steps)
                     time_step += number_of_steps
 
-                    if current_episode % write_frequency == 0 \
-                        or current_episode == number_of_episodes - 1:
+                    if time_step % write_frequency == 0 \
+                        or time_step == number_of_total_steps - 1 or time_step == number_of_total_steps:
                         payoffs = np.array([agent.payoff
                                             for agent in self.agents])
                         ingroup = np.array([agent.ingroup
