@@ -35,17 +35,14 @@
 \pagenumbering{arabic}
 
 \begin{document}
-%
+
 \title{Monash IDR Social Polarisation Report 25/09/20}
 
 \author{Frances Cameron-Muller, Supervisor: Dr. Julian Garcia}
 
-\maketitle              % typeset the header of the contribution
+\institute{Monash University}
 
-
-%\begin{abstract}
- % \input{src/abstract}
- % \end{abstract}
+\maketitle    
 
  \section{Introduction}
   The aim of this project is to study social polarization and the rise of prejudice in populations, utilizing a combination of game theoretical techniques and agent-based simulations. Social network models are applied to model interactions between agents of two groups. The agents possess beliefs regarding the expected behaviour of the in and outgroup individuals and continuously update their beliefs on the basis of their interactions. This potentially gives rise to prejudice in the population identified by differential beliefs towards in and outgroup individuals. 
@@ -78,68 +75,71 @@ In each simulation the population consisted of 100 agents, 50 in each tag group.
 For the Stag Hunt game with smaller separation in payoffs and less incentive to cooperate, under all conditions the beliefs tended towards probabilities in the middle. When there is an initial difference between the in and outgroup beliefs, the difference decreases throughout the course of the simulation and in most cases there is no real difference at the end. The payoffs in all situations didn’t deviate much over the course of the simulation and there is no significant difference between the payoffs of either group. The payoffs remain at around 3 when the optimal payoff is 4.
 For the games with a larger payoff separation for which there is more incentive to cooperate, it is observed that regardless of the initial beliefs the agents learn to cooperate with all other agents. This is evident with the final beliefs being high probabilities close to 1. Also, in every case the optimal payoff of the population is achieved. This shows that for social learning on a well mixed network structure, the ratio of risk to reward determined by the payoff game matrix plays a pivotal role in the behaviour of the agents. A difference between the two choices of strategy, beliefs and direct action, is only observed in the games with a larger payoff separation. The payoffs for the beliefs based strategy converged to the optimal payoff a lot faster than the direct actions approach. 
 
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/social_wellmixed1}
-\caption{\label{social_wellmixed1} Graphs of the social learning model with the beliefs strategy approach on a well mixed network under every initial belief condition.}
-\end{figure}
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/social_wellmixed2}
-\caption{\label{social_wellmixed2} Graphs of the social learning model with the direct actions strategy approach on a well mixed network under every initial belief condition.}
-\end{figure}
 
 \subsection{Social learning on a two communities network}
 For the beliefs based strategy approach, similar behaviour was observed compared to the well mixed population. For the smaller payoff separation games, beliefs approached middle valued probabilities and initial differences in beliefs diminished. For larger payoff separation games, the beliefs converge to high probabilities and the payoffs quickly converge to the optimal payoff.
 However, for the direct actions strategy approach, different behaviour was observed in comparison to the well mixed population. For the small payoff separation games, there was a case when the initial difference in beliefs never diminished and another when a difference in beliefs arose when there wasn’t initially. This could be due to the effect of the divided network structure. Interestly, both of these cases suggest the opposite of prejudice, where agents believe that the opposite group is more likely to cooperate than their own group.
 For the games with a large payoff separation and more incentive to cooperate, for all combinations of initial beliefs prejudice arose. In all cases, the ingroup probabilities converge quickly to 1 while the outgroup probabilities are much lower at around 0.7. The payoffs all converged to slightly less than the optimal payoffs.
 
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/social_twocommunities1}
-\caption{\label{social_twocommunities1} Graphs of the social learning model with the beliefs strategy approach on a two communities network under every initial belief condition.}
-\end{figure}
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/social_twocommunities2}
-\caption{\label{social_twocommunities2} Graphs of the social learning model with the direct actions strategy approach on a two communities network under every initial belief condition.}
-\end{figure}
-
 \subsection{Individual learning}
 Nearly identical results were observed for individual learning for both network structures, payoff matrices, strategy approaches and initial beliefs. In all cases, the in and outgroup beliefs almost instantly dropped to a value around 0.3 and only very slowly increased over the course of the simulation. In all cases, there is no difference in the in and outgroup beliefs implying the lack of prejudice. Constant payoffs with low variance of around half of the optimal payoffs were achieved in all situations. The results suggest that when all the agents are learning individually, the agents have difficulty learning to cooperate and stick with a defecting strategy, on average. 
 To demonstrate the validity of the individual learning (reinforcement learning) method, below are the results from the 2 agent test case. In this model, there is a dummy agent that plays a fixed strategy and a learning agent. The graphs below show the learning agent correctly learning the dummy agent’s fixed strategy of defect and cooperate, respectively, and the Nash equilibriums. Therefore, we are confident in the reinforcement learning algorithm, and suggest that the stagnant results from the 100 agent model is due to the effect of the agents struggling to learn the optimal strategy because every other agent is also changing their strategies in between interactions. 
-
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/individual_2agents}
-\caption{\label{individual_2agents} Graphs of the individual learning model correctly learning the fixed strategy of a dummy agent.
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/individual_wellmixed1}
-\caption{\label{individual_wellmixed1} Graphs of the individual learning model with the beliefs strategy approach on a well mixed network under every initial belief condition.}
-\end{figure}
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/individual_wellmixed2}
-\caption{\label{individual_wellmixed2} Graphs of the individual learning model with the direct actions strategy approach on a well mixed network under every initial belief condition.}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/individual_twocommunities1}
-\caption{\label{individual_twocommunities1} Graphs of the individual learning model with the beliefs strategy approach on a two communities network under every initial belief condition.}
-\end{figure}
-\begin{figure}
-\centering
-\includegraphics[width=11cm]{images/individual_twocommunities2}
-\caption{\label{individual_twocommunities2} Graphs of the individual learning model with the direct actions strategy approach on a two communities network under every initial belief condition.}
-\end{figure}
  
 \section{Conclusion}
 In conclusion, the results suggest that the learning method, social or individual learning, has the greatest effect on the movement of agents’ beliefs.  When the agents learnt strategies as a group from their pooled interactions in the social learning models, the beliefs were able to change over time. Whereas, when individuals updated their beliefs from personal experiences alone, their beliefs fluctuated dramatically less and most agents stuck with a defecting strategy.  The difference in the payoff for cooperating and defecting also had a significant effect on the movement of beliefs for the social learning models. For games with a higher reward for both agents cooperating, agents learnt to cooperate under more initial belief conditions and generally more quickly. The effect of the agents’ choice of strategy was also only observed in the social learning models with the payoffs converging to the optimal payoffs quicker for the beliefs based approach compared to direct actions. Network structure also had an effect on the social learning models, with maximum optimal population payoffs only being able to be achieved in the well mixed population as well as differences in beliefs being more robust to change for the two communities network. 
 Finally, prejudice was shown to arise on the two communities network structure, with a direct action strategy approach, a large difference in the payoffs of the Nash equilibrium regardless of the combination of initial beliefs. Directions for future research include investigating the effect of the populations with unequal proportions of group membership and alternative network structures. 
 
+\section{Appendix}
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/social_wellmixed1}
+\caption{\label{social_wellmixed1} Graphs of the social learning model with the beliefs strategy approach on a well mixed network under every initial belief condition.}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/social_wellmixed2}
+\caption{\label{social_wellmixed2} Graphs of the social learning model with the direct actions strategy approach on a well mixed network under every initial belief condition.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/social_twocommunities1}
+\caption{\label{social_twocommunities1} Graphs of the social learning model with the beliefs strategy approach on a two communities network under every initial belief condition.}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/social_twocommunities2}
+\caption{\label{social_twocommunities2} Graphs of the social learning model with the direct actions strategy approach on a two communities network under every initial belief condition.}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/individual_wellmixed1}
+\caption{\label{individual_wellmixed1} Graphs of the individual learning model with the beliefs strategy approach on a well mixed network under every initial belief condition.}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/individual_wellmixed2}
+\caption{\label{individual_wellmixed2} Graphs of the individual learning model with the direct actions strategy approach on a well mixed network under every initial belief condition.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/individual_twocommunities1}
+\caption{\label{individual_twocommunities1} Graphs of the individual learning model with the beliefs strategy approach on a two communities network under every initial belief condition.}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/individual_twocommunities2}
+\caption{\label{individual_twocommunities2} Graphs of the individual learning model with the direct actions strategy approach on a two communities network under every initial belief condition.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/individual_2agents}
+\caption{\label{individual_2agents} Graphs of the individual learning model correctly learning the fixed strategy of a dummy agent.}
+\end{figure}
 
 \end{document}
