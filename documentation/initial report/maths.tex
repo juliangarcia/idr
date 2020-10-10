@@ -39,6 +39,8 @@
 \setcounter{page}{1}
 \pagenumbering{arabic}
 
+\DeclareMathOperator*{\argmax}{argmax} 
+
 \begin{document}
 
 \title{Mathematics for Beliefs Strategy Approach}
@@ -50,79 +52,130 @@
 \maketitle    
 
 \section{Introduction}
-In the beliefs strategy approach, each agent has an in and outgroup belief. These beliefs represent the probability of ingroup/outgroup individuals cooperating. 
+In the individual learning model, every agent has an belief about how both types of agents will play. These beliefs represent the probability of ingroup/outgroup individuals cooperating. 
 
 \section{Definitions}
- 
-Payoff Matrix:
-\begin{equation}
-   \begin{pmatrix} 
+
+\subsection{Bayesian Games} 
+A Bayesian game consists of: \\
+A set of players: $I$\\
+A set of actions (pure strategies) for each player i: $S_i$\\
+A set of types for each player i: $\theta_i  \in \Theta_i $ \\
+A payoff function for each player i: $u_i(\,s_1, . . . ,s_I, \theta_1, . . . , \theta_I)\,$\\
+A (joint) probability distribution $p(\,\theta_1, . . . , \theta_I)\,$ over types 
+
+\subsection{Specifics for this model}
+Player i's belief about type $\theta$ :  $b_{i,\theta}$ \\ 
+\[
+   \text{Payoff Matrix} = \begin{pmatrix} 
    R & S  \\
    T & P  
    \end{pmatrix} 
-\end{equation}
-
+\]
+\\
 Payoff Threshold: $H = \frac{S-P}{T-P-R+S}$ \\
-Focal player's ingroup belief:  $f_i$ \\  
-Focal player's outgroup belief:  $f_o$ \\
-Opponent player's ingroup belief:  $o_i$ \\ 
-Opponent player's outgroup belief:  $o_o$ \\
 Number of agents: $n$ \\ 
-Proportion of tag 0s: $p$ \\ 
-Number of rounds per step: $r$ \\ 
-
-\section{Payoff of focal player of tag g against opponent player of tag t}
-
+Set of actions (pure strategies) for each player i: $S_i = \{0 (\,Cooperate)\, ,1 (\,Defect)\,\}$\\
+Set of types for each player i: $ \Theta_i = \{0,1\}$ \\
+Payoff function for each player i: $u_i(\,s_1, . . . ,s_I, \theta_1, . . . , \theta_I)\,$\\
+\\
+Payoff function of player i with strategy $s_i \in S_i$ and type $\theta_i$ against an opponent with strategy $s_{-i}$ and type $\theta_{-i}$
 \[
-   P_{g,t} =  \begin{cases}
-        R & if\ f_t \geq H \cap o_g \geq H \\
-        S & if\ f_t \geq H \cap o_g < H \\
-        T & if\ f_t < H \cap o_g \geq H \\
-        P & if\ f_t < H \cap o_g < H \\
+   u_i(\,s_i, s_{-i}(\,\theta_{-i})\,,  \theta_i, \theta_{-i})\, =  \begin{cases}
+        R & if\ s_i = 0 \cap s_{-i} = 0 \\
+        S & if\ s_i = 0 \cap s_{-i} = 1 \\
+        T & if\ s_i = 1 \cap s_{-i} = 0 \\
+        P & if\ s_i = 1 \cap s_{-i} = 1 \\
+    \end{cases}
+\]
+or equivalently 
+\[
+   u_i(\,s_i, s_{-i}(\,\theta_{-i})\,,  \theta_i, \theta_{-i})\, =  \begin{cases}
+        R & if\ b_{i,\theta_{-i}} \geq H \cap b_{-i,\theta_{i}}  \geq H \\
+        S & if\ b_{i,\theta_{-i}}  \geq H \cap b_{-i,\theta_{i}} < H \\
+        T & if\ b_{i,\theta_{-i}}  < H \cap b_{-i,\theta_{i}} \geq H \\
+        P & if\ b_{i,\theta_{-i}} < H \cap b_{-i,\theta_{i}} < H \\
     \end{cases}
 \]
 
-Let's introduce some indicator functions to represent the strategy a player $p$ will play against a tag group $t$ 
-\[
-   S_{p,t} =  \begin{cases}
-        0 & if\ p_t \geq H \\
-        1 & if\ p_t < H \\
-    \end{cases}
-\]
 
-If a player's belief is above the threshold they will play a strategy of 0 (cooperation). 
-In this case we are interested in the strategy if the focal player $f$ against the tag group of their opponent $t$ and vice versa.
+\section{Expected Payoff}
+
+Using Bayes rule, the expected payoffs of player i of type $\theta_i$ with a strategy $s_i'$ is 
 \[
-   S_{f,t} =  \begin{cases}
-        0 & if\ f_t \geq H \\
-        1 & if\ f_t < H  \\
-    \end{cases}
-\]
-\[
-   S_{o,g} =  \begin{cases}
-        0 & if\ o_g\geq H \\
-        1 & if\ o_g < H  \\
-    \end{cases}
+U(\,s_i', s_{-i}(\, . )\,, \theta_i)\, = \sum\limits_{\theta_{-i}} p(\, \theta_{-i} \mid \theta_i)\, u_i(\,s_i', s_{-i}(\, \theta_{-i} )\,, \theta_i, \theta_{-i})\,
 \]
 \\
-Therefore, \\
-$P_{g,t} = R \times ( \, 1-S_{f,t}) \,  \times ( \, 1-S_{o,g}) \, + \ S \times ( \, 1- S_{f,t}) \, \times S_{o,g} \ + \ T \times S_{f,t} \times ( \, 1-S_{o,g}) \,\ + \ P \times S_{f,t} \times S_{f,t} $
+The strategy profile s(.) is a (pure strategy) Bayesian Nash equilibrium if for all $i \in I$ and for all $\theta_i \in \Theta_i$, we have that 
+\[
+s_i(\,\theta_i)\, \in \argmax\limits_{s_i' \in S_i} \sum\limits_{\theta_{-i}} p(\, \theta_{-i} \mid \theta_i)\, u_i(\,s_i', s_{-i}(\, \theta_{-i} )\,, \theta_i, \theta_{-i})\,
+\]
 \\
+The expression for expected payoff represents the sum of the conditional probabilities that an opponent is type $\theta_{-i}$ given the agent is type $\theta_i$ multiplied with the payoff agent i would receive against an agent of this type.\\
+Unfortunately, we have incomplete information in our model and agent i doesn't know the beliefs or behaviour of the other players. Therefore we extend the model so that agent i has a prior guess of the how the other agents will play against them.\\
+Agent's priors of how agents of a certain type will behave is represented by a Normal distribution. It is specified by a mean that represents the probability they expect agents of that type will cooperate and a variance that describes their uncertainty in their prior guess. \\
+
+\subsection{Example}
+
+Consider a model with, 3 agents (n = 3) of types $\theta = (\, \theta_1, \theta_2, \theta_3)\, = (\, 0,0,1)\,.$\\
+The proportion of agents of type 0, $p = \frac{2}{3}$.\\
+\[
+   \text{Payoff Matrix} = \begin{pmatrix} 
+   6 & 1  \\
+   3 & 2  
+   \end{pmatrix} 
+\]
+Agent 1 has prior guesses of $N(\,0.9,1)\,$ and $N(\,0.1,1)\,$ for types 0 and 1, respectively. \\
 \\
-Therefore, if you were given as input, g = tag group of the focal player, t = tag group of opposition, the in and outgroup beliefs of the focal and opponent player and the payoff matrix you can calculate the payoff of the focal player. 
-
-This can be generalised to if you were given the average in and outgroup beliefs of the tag groups these can be used to approximate the beliefs for either or both players. 
-
-Next, if we know the proportion of groups in the population, we can compute the expected payoffs and population payoffs. 
+The expected payoff of player 1 playing a strategy of $s_1' = 0$
+\[ 
+U(\,s_1' = 0,  s_{-1}(\, . )\,, \theta_1 = 0)\, = \sum\limits_{\theta_{-i}} p(\, \theta_{-i} \mid \theta_i)\, u_i(\,s_i', s_{-i}(\, \theta{-i} )\,, \theta_i, \theta_{-i})\, 
+\]
+\[
+= p(\, \theta_{2} \mid \theta_1)\, u_1(\,s_1' = 0, s_{2}(\, \theta_{2} )\,, \theta_1, \theta_{2})\, +  p(\, \theta_{3} \mid \theta_1)\, u_1(\,s_1' = 0, s_{3}(\, \theta{3} )\,, \theta_1, \theta_{3})\,
+\] 
+\[
+= p(\, 0 \mid 0)\,  \times R + p(\, 1 \mid 0)\,  \times S
+\]
+\[
+= \frac{1}{2} \times 6 + \frac{1}{2} \times 1 = 3.5
+\]
 \\
+The expected payoff for player 1 with a strategy of 1 is 
+\[ 
+U(\,s_1' = 1,  s_{-1}(\, . )\,, \theta_1 = 0)\, = \sum\limits_{\theta_{-i}} p(\, \theta_{-i} \mid \theta_i)\, u_i(\,s_i', s_{-i}(\, \theta{-i} )\,, \theta_i, \theta_{-i})\, 
+\]
+\[
+= p(\, \theta_{2} \mid \theta_1)\, u_1(\,s_1' = 1, s_{2}(\, \theta_{2} )\,, \theta_1, \theta_{2})\, +  p(\, \theta_{3} \mid \theta_1)\, u_1(\,s_1' = 1, s_{3}(\, \theta{3} )\,, \theta_1, \theta_{3})\,
+\]
+\[
+= p(\, 0 \mid 0)\,  \times T + p(\, 1 \mid 0)\,  \times P
+\]
+\[
+= \frac{1}{2} \times 3 + \frac{1}{2} \times 2 = 2.5
+\]
+\\
+Therefore, the Bayesian Nash equilibrium given these conditions is 
+\[
+s_i(\,\theta_i)\, \in \argmax\limits_{s_i' \in S_i} \sum\limits_{\theta_{-i}} p(\, \theta_{-i} \mid \theta_i)\, u_i(\,s_i', s_{-i}(\, \theta{-i} )\,, \theta_i, \theta_{-i})\,
+\]
+\[
+s_1(\,0)\, = 0
+\]
+The Bayesian Nash Equilibrium solution for agent 1 in this model given the prior distribution is cooperating. 
 
-Expected payoff per round for an agent of tag g $ = r \times p \times P_{g,o} \ + \ r\times(\, 1 - p )\, \times P_{g,1} $
+\subsection{Extensions}
+We can vary parameters such as prior beliefs, payoff matrix and proportion of each type to see the effect on the expected payoffs and optimal strategies of the agents. 
 
-\section{Graph} 
+\section{Experiments}
 \begin{figure}
 \centering
-\includegraphics[width=15cm]{images/beliefs}
-\caption{\label{beliefs} Graph of payoffs changing with beliefs.}
+\includegraphics[width=12cm]{images/p_experiment}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/prior_experiment}
 \end{figure}
 
 
