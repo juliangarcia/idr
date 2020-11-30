@@ -123,19 +123,8 @@ f_x(y) = \Pi ( y, x_{-}, \alpha ) - \Pi ( x, x_{-}, \alpha )
 \[
 f_x(y) = \alpha \Pi ( y, y) + (1-\alpha) \Pi ( y, x_{-} ) - \alpha \Pi ( x, x) - (1-\alpha) \Pi ( x,  x_{-} )
 \]
-\
 \[
 f_x(y) = \alpha \Pi ( y, y) + (1-\alpha) \Pi ( y, x_{-} ) - \Pi ( x,  x_{-} )
-\]
-\
-\[
- \alpha \Pi ( y, y)  = \alpha R y^2 + \alpha S (1-y) y +  \alpha T y (1-y) + \alpha P (1-y)^2
-\]
-\[
- (1-\alpha) \Pi ( y, x_{-} ) =  (1-\alpha) R x y +  (1-\alpha) S (1-x) y +  (1-\alpha)  T x (1-y) +  (1-\alpha) P (1-x) (1-y)
-\]
-\[
--\Pi ( x, x_{-} ) = -R x^2 - S (1-x) x -  T x (1-x) - P (1-x)^2
 \]
 \begin{multline}
 f_x(y) = \alpha (R-S-T+P) y^2 +(S + \alpha T - P - \alpha P) y + (1-\alpha) (R-S-T+P) x y \\+ (-\alpha T + \alpha P - S + P) x + (-R+S+T-P) x^2
@@ -144,22 +133,26 @@ f_x(y) = \alpha (R-S-T+P) y^2 +(S + \alpha T - P - \alpha P) y + (1-\alpha) (R-S
 D(x) = \diffp*{f_x(y)}{y}{y=x}
 \]
 \[
-D(x) = 2 \alpha (R-S-T+P) x + (S + \alpha T - P - \alpha P) + (1-\alpha) (R-S-T+P) x
-\]
-\[
 D(x) = (1+\alpha) (R-S-T+P) x + (S + \alpha T - P - \alpha P) 
 \]
 \[
 H = \frac{S + \alpha T - P - \alpha P}{(1+\alpha)(R-S-T+P)}
 \]
 
-%\section{Experiments}
-%\begin{figure}
-%\centering
-%\includegraphics[width=12cm]{images/p_experiment}
-%\end{figure}
+\section{Graphs}
+The derivative of the invasion fitness function of a rare mutant strategy, D(x), is graphed below for all possible dominant strategies, x $\in [0,1]$. Negative values of D(x) indicate the best payoffs are achieved by decreasing the value of x whereas for positive values of D(x), greater payoffs are achieved by increasing x. The function D(x) was graphed for two different payoff matrices [4,1:3,2] and [6,1;3,2]. This shows how the invasion fitness of a rare mutant strategy is impacted by the relative difference in the payoffs between cooperating and defecting. The graph below shows that when the payoff for cooperating is much greater than the payoff for cooperating, the threshold at which D(x) changes sign occurs at a smaller value of x. This demonstrates that greater relative payoffs for cooperation increase the probability of social cooperation as rare mutant strategies are more likely to increase the dominant strategy. This behaviour was observed in the simulation results. 
 
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/invasion_fitness}
+\end{figure}
 
+The second graph shows the same function as the graph above, the derivative of the invasion fitness function of a rare mutant strategy, D(x), when we incorporate the parameter, alpha. The graphs shows D(x) for the same payoff matrix [4,1;3,2] but for three values of alpha. When alpha = 0, meaning the  probability that an agent is matched to play against a copy of themselves instead of their original opponent is zero, we observe the exact same function in the previous graph, as expected. When alpha = 1, D(x) is always positive illustrating that the agents learning to cooperate is always achieved if the agents are only playing against a copy of themselves. For alpha values between 0 and 1, as alpha increases the threshold for D(x) decreases. Therefore, the more likely the agents are to play against opponents that are similar to themselves, the more likely they will learn to cooperate. 
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/invasion_fitness_alpha}
+\end{figure}
 
 
 \end{document}
