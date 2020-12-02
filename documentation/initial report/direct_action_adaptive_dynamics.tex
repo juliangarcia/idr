@@ -154,5 +154,53 @@ The second graph shows the same function as the graph above, the derivative of t
 \includegraphics[width=12cm]{images/invasion_fitness_alpha}
 \end{figure}
 
+\section{Extending to Ingroup and Outgroup actions}
+
+\subsection{Once Off Stag Hunt}
+
+Each agent in the population has a two-dimensional strategy profile strategy, $x_i$, consisting of an ingroup and outgroup strategy,  $x_i = (x_{in}, x_{out})$\\
+\\
+$x_{in} \in [0,1]$ is the probability that an agent with a strategy profile x cooperates with an individual from the ingroup. \\
+\\
+$x_{out} \in [0,1]$ is the probability that an agent with a strategy profile x cooperates with an individual from the outgroup. \\
+\\
+Let $\beta_i \in [0,1]$ be the probability that agent i plays an individual from the ingroup.\\
+
+Let $ \Pi ( y, x_{-}, \beta)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the rest of the population playing the strategy $x = (x_{in}, x_{out})$ where the probability of an agent playing the strategy y matching with an individual from the ingroup is $\beta$.
+\[
+\Pi ( y, x_{-} , \beta) = \beta \Pi ( y_{in}, x_{in}) + (1-\beta) \Pi ( y_{out}, x_{out} ) 
+\]
+\\
+The invasion fitness of a rare mutant strategy y in a population that consists of only strategy x is given by 
+\[
+f_x(y) = \Pi ( y, x_{-} , \beta) - \Pi ( x, x_{-} , \beta) 
+\]
+
+\[
+f_x(y) = \beta \Pi ( y_{in}, x_{in}) + (1-\beta) \Pi ( y_{out}, x_{out} )  - \beta \Pi ( x_{in}, x_{in}) - (1-\beta) \Pi ( x_{out}, x_{out} ) 
+\]
+
+\[
+D(x) = \diffp*{f_x(y)}{y}{y=x}
+\]
+\\
+\[
+D(x) = (\beta((R - S - T + P) x_{in} + (S-P)), (1-\beta)((R - S - T + P) x_{out} + (S-P)))
+\]
+\\
+Let $H = (\frac{P-S}{R - S - T +P}, \frac{P-S}{R - S - T +P}) $ also known as the threshold with $ D(H) = 0 $.\\
+\\
+\\
+Depending on the strategy profiles of the dominant and rare mutant strategies and the probability of the rare strategy playing an ingroup individual, D(x) can have partial derivates that are negative, positive or zero in any combination. The first partial derivative describes how the agent should modify their ingroup strategy and the second partial derivative describes how the agent should adjust their outgroup strategy. 
+
+
+\section{Graphs for the Basic Model}
+The partial derivative of the invasion fitness function of a rare mutant strategy with respect to the ingroup strategy, $D(x_{in})$, is graphed below for all possible dominant ingroup strategies, $x_{in} \in [0,1]$. Negative values of $D(x_{in})$ indicate the best payoffs are achieved by decreasing the value of $x_{in} $ whereas for positive values $D(x_{in})$, greater payoffs are achieved by increasing  $x_{in} $. The function $D(x_{in})$ was graphed for two different values of $\beta$. This shows that as the probability of an agent playing an individual from the ingroup increases, meaning they belong to an increasing majority, the absolute value of $D(x_{in})$ increases. The exact same behaviour is observed when the ingroup strategy is fixed and the outgroup strategy is varied. This can be interpreted as when the agent belongs to a larger group within the population they update their strategies more rapidly. 
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/beta_ingroup_graph}
+\end{figure}
+
 
 \end{document}
