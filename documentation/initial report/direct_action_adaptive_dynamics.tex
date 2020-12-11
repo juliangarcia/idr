@@ -108,7 +108,7 @@ D(x) = D(0.1) = (6 - 1 - 3 +2) 0.1 + (1-2) = -0.6
 Since the partial derivative is negative this suggests that the current dominant belief of $x = 0.1$ should be increased. 
 
 
-\section{Adaptive Dynamics for Repeated Stag Hunt Games}
+\section{Adaptive Dynamics incorporating the Alpha Paramter}
 
 Now let's introduce a new parameter $\alpha \in [0, 1]$ where $\alpha$ is the probability that an agent is matched to play against a copy of themselves instead of their original opponent. 
 \\
@@ -154,7 +154,8 @@ The second graph shows the same function as the graph above, the derivative of t
 \includegraphics[width=12cm]{images/invasion_fitness_alpha}
 \end{figure}
 
-\section{Extending to Ingroup and Outgroup actions}
+
+\section{Extending to Ingroup and Outgroup Strategies}
 
 \subsection{Once Off Stag Hunt}
 
@@ -165,19 +166,21 @@ $x_{in} \in [0,1]$ is the probability that an agent with a strategy profile x co
 $x_{out} \in [0,1]$ is the probability that an agent with a strategy profile x cooperates with an individual from the outgroup. \\
 \\
 Let $\beta_i \in [0,1]$ be the probability that agent i plays an individual from the ingroup.\\
+\\
+Let $\beta_{-i} = 1 -\beta_i $ be the probability that an agent of the opposite group of agent i plays an individual from the ingroup.\\
 
-Let $ \Pi ( y, x_{-}, \beta)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the rest of the population playing the strategy $x = (x_{in}, x_{out})$ where the probability of an agent playing the strategy y matching with an individual from the ingroup is $\beta$.
+Let $ \Pi ( y, x_{-}, \beta_y)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the rest of the population playing the strategy $x = (x_{in}, x_{out})$ where the probability of an agent playing the strategy y matching with an individual from the ingroup is $\beta_y$.
 \[
-\Pi ( y, x_{-} , \beta) = \beta \Pi ( y_{in}, x_{in}) + (1-\beta) \Pi ( y_{out}, x_{out} ) 
+\Pi ( y, x_{-} , \beta_y) = \beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} ) 
 \]
 \\
 The invasion fitness of a rare mutant strategy y in a population that consists of only strategy x is given by 
 \[
-f_x(y) = \Pi ( y, x_{-} , \beta) - \Pi ( x, x_{-} , \beta) 
+f_x(y) = \Pi ( y, x_{-} , \beta_y) - \Pi ( x, x_{-} , \beta_x) 
 \]
-
+where $\beta_x = 1 - \beta_y$
 \[
-f_x(y) = \beta \Pi ( y_{in}, x_{in}) + (1-\beta) \Pi ( y_{out}, x_{out} )  - \beta \Pi ( x_{in}, x_{in}) - (1-\beta) \Pi ( x_{out}, x_{out} ) 
+f_x(y) = \beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} )  - \beta_x \Pi ( x_{in}, x_{in}) - (1-\beta_x) \Pi ( x_{out}, x_{out} ) 
 \]
 
 \[
@@ -185,7 +188,7 @@ D(x) = \diffp*{f_x(y)}{y}{y=x}
 \]
 \\
 \[
-D(x) = (\beta((R - S - T + P) x_{in} + (S-P)), (1-\beta)((R - S - T + P) x_{out} + (S-P)))
+D(x) = (\beta_y((R - S - T + P) x_{in} + (S-P)), (1-\beta_y)((R - S - T + P) x_{out} + (S-P)))
 \]
 \\
 Let $H = (\frac{P-S}{R - S - T +P}, \frac{P-S}{R - S - T +P}) $ also known as the threshold with $ D(H) = 0 $.\\
@@ -193,8 +196,25 @@ Let $H = (\frac{P-S}{R - S - T +P}, \frac{P-S}{R - S - T +P}) $ also known as th
 \\
 Depending on the strategy profiles of the dominant and rare mutant strategies and the probability of the rare strategy playing an ingroup individual, D(x) can have partial derivates that are negative, positive or zero in any combination. The first partial derivative describes how the agent should modify their ingroup strategy and the second partial derivative describes how the agent should adjust their outgroup strategy. 
 
+\subsection{Example}
 
-\section{Graphs for the Basic Model}
+Consider a model with dominant strategy $x = (0.6, 0.4)$ interpreted as agents will only cooperate in 60\% of games when playing an individual from the ingroup and 40\% of games when playing an outgroup individual and a rare mutant strategy $y = (0.9, 0.7)$ representing agents will cooperate in 90\% of games when matched with an ingroup individual and 70\% of games when playing an outgroup agent and the probability of the rare startegy playing against an ingroup agent is 0.1. 
+\[
+   \text{Payoff Matrix} = \begin{pmatrix} 
+   6 & 1  \\
+   3 & 2  
+   \end{pmatrix} 
+\]
+\[
+D(x) = (0.1((6 - 1 - 3 + 2)0.6 + (1-2)), (1-0.1)((6 - 1 - 3 + 2) 0.4 + (1-2)))
+\]
+\[
+D(x) = (-0.76, 0.44)
+\]
+Since the partial derivative with respect to the ingroup strategy is negative  this suggests that the current dominant ingroup belief of $x = 0.6$ should be increased. Since the partial derivative with respect to the outgroup strategy is positive this suggests that the current dominant outgroup belief of $x = 0.4$ should be decreased. This is the expected behaviour. 
+
+
+\section{Graphs for the Ingroup/Outgroup Model}
 The partial derivative of the invasion fitness function of a rare mutant strategy with respect to the ingroup strategy, $D(x_{in})$, is graphed below for all possible dominant ingroup strategies, $x_{in} \in [0,1]$. Negative values of $D(x_{in})$ indicate the best payoffs are achieved by decreasing the value of $x_{in} $ whereas for positive values $D(x_{in})$, greater payoffs are achieved by increasing  $x_{in} $. The function $D(x_{in})$ was graphed for two different values of $\beta$. This shows that as the probability of an agent playing an individual from the ingroup increases, meaning they belong to an increasing majority, the absolute value of $D(x_{in})$ increases. The exact same behaviour is observed when the ingroup strategy is fixed and the outgroup strategy is varied. This can be interpreted as when the agent belongs to a larger group within the population they update their strategies more rapidly. 
 
 \begin{figure}
