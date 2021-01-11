@@ -52,30 +52,34 @@
 
 \maketitle    
 
-\section{Adaptive Dynamics for Once Off Stag Hunt Game}
+\section{Basic Model}
 
-Let $x_i \in [0,1]$ be the probability that agent i cooperates. \\
-The Stag Hunt Payoff matrix is 
+\subsection{Adaptive Dynamics Analysis}
+
+The model consists of a population of agents that are matched into pairs to play a Stag Hunt game. Let $x_i \in [0,1]$ be the probability that agent i cooperates with their matched opponent. \\
+The Stag Hunt Payoff Matrix is 
 \[
   \begin{pmatrix} 
    R & S  \\
    T & P  
    \end{pmatrix} 
 \]
-with $ R > T \geq P > S $ \\
+with $ R > T \geq P > S. $ \\
 \\
-Let $ \Pi ( y, x_{-} )$ be the payoff function of playing a strategy y against the rest of the population playing the strategy x. 
+Let $ \Pi ( y, x_{-} )$ be the payoff function of playing a strategy y against the rest of the population playing the strategy x. The payoff function $ \Pi ( y, x_{-} )$ measures the expected reward of an agent playing strategy y against opponents playing the strategy x. 
 \[
 \Pi ( y, x_{-} ) = R x y + S (1-x) y +  T x (1-y) + P (1-x) (1-y)
 \]
 \\
-The invasion fitness of a rare mutant strategy y in a population that consists of only strategy x is given by 
+The initial growth rate of a mutant strategy is known as its invasion fitness, a quantity that describes the likelihood of the mutant strategy surviving in the population. A positive invasion fitness means the mutant strategy has a positive probability of surviving and a negative invasion fitness means the mutant strategy will more likely go extinct. In this model, the invasion fitness of a rare mutant strategy y in a population with a dominant dominant strategy x is measured by the difference in the payoff functions of the mutant strategy against the dominant strategy and the payoff function of the dominant strategy against itself. 
 \[
 f_x(y) = \Pi ( y, x_{-} ) - \Pi ( x, x_{-} )
 \]
 \begin{multline}
 f_x(y) = R x y + S (1-x) y +  T x (1-y) + P (1-x) (1-y) \\ - R x^2 - S (1-x) x - T x (1-x) - P (1-x) (1-x)
 \end{multline}
+\\
+The derivate of invasion fitness evaluated at the point of the dominant strategy is known as the selection gradient which determines the direction of evolutionary change. If the selection gradient is positive then mutant strategies with slightly higher values are more likely to invade and vice-versa. 
 \[
 D(x) = \diffp*{f_x(y)}{y}{y=x}
 \]
@@ -83,40 +87,41 @@ D(x) = \diffp*{f_x(y)}{y}{y=x}
 D(x) = (R - S - T +P) x + (S-P)
 \]
 \\
-Let $H = \frac{P-S}{R - S - T +P} $ also known as the threshold with $ D(H) = 0 $.\\
-\\
-For $x < H, D(x) < 0$ and for $x > H, D(x) > 0$
-This means that for x values below the threshold, the best payoffs are achieved by decreasing the value of x and converging to the Nash equilibrium of always defecting and for x values above the threshold, the best payoffs are achieved by increasing the value of x and converging to the Nash equilibrium of always cooperating. 
-
-\subsection{Example}
-
-Consider a model with dominant strategy $x = 0.1$ interpreted as agents will only cooperate in 10\% of games and a rare mutant strategy $y = 0.7$ representing agents will cooperate in 70\% of games. 
+Points where the selection gradient vanishes are known as evolutionarily singular strategies. These are significant points as this is where evolutionary stable strategies or evolutionary branching may occur. A evolutionary singular point is only an evolutionary stable point if the second derivative of the invasion fitness at that point is negative. 
 \[
-   \text{Payoff Matrix} = \begin{pmatrix} 
-   6 & 1  \\
-   3 & 2  
-   \end{pmatrix} 
+D(H) = 0
 \]
-The invasion fitness of the rare mutant strategy y = 0.7 is 
-\begin{multline}
-f_{0.1}(0.7) = 6 0.1 0.7 + 1 (1-0.1) 0.7 +  3 0.1 (1-0.7) + 2 (1-0.1) (1-0.7) \\ - 6 0.1^2 - 1 (1-0.1) 0.1 - 3 0.1 (1-0.1) - 1 (1-0.1) (1-0.1) = 0.45
-\end{multline}
-The strategy has a positive invasion fitness.
-\[
-D(x) = D(0.1) = (6 - 1 - 3 +2) 0.1 + (1-2) = -0.6
+\[H = \frac{P-S}{R - S - T +P} 
 \]
-Since the partial derivative is negative this suggests that the current dominant belief of $x = 0.1$ should be increased. 
-
-
-\section{Adaptive Dynamics incorporating the Alpha Paramter}
-
-Now let's introduce a new parameter $\alpha \in [0, 1]$ where $\alpha$ is the probability that an agent is matched to play against a copy of themselves instead of their original opponent. 
 \\
-Therefore, the expected payoff is given by the sum of payoffs of when an agent plays their copy and when an agent plays their original opponent, weighted by the probabilities.
+For $x < H, D(x) < 0$ and for $x > H, D(x) > 0.$ This means that for x values below the threshold, the best payoffs are achieved by decreasing the value of x and converging to the Nash equilibrium of always defecting and for x values above the threshold, the best payoffs are achieved by increasing the value of x and converging to the Nash equilibrium of always cooperating. 
+
+\subsection{Graphs}
+
+The first graph below plots the invasion fitness function for all the values the mutant strategy can take against different dominant strategies. This graph shows, given a population with dominant strategy x, which mutant strategy values will have a positive invasion fitness and successfully invade. The payoff matrix of this game is [4,1;3,2] and the threshold H = 0.5. This graph illustrates that when the dominant strategy is less than the threshold 0.5, mutant strategies with values less than the dominant strategy will survive and the game will converge to the defect-defect equilibrium. However, when the dominant strategy is greater than 0.5, mutant strategies greater than the dominant strategy will survive and the game will converge to the cooperate-cooperate equilibrium. Overall, the direction of evolutionary change depends if the dominant strategy is above or below the threshold. \\
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/inv_fit_basic}
+\end{figure}
+
+Pairwise invasibility plots (PIP) are graphs that plot the sign of the invasion fitness for all possible pairings of dominant and mutant strategies. They are visual tools that illustrate which combinations will result in successful invasion of the mutant strategy. The graph below shows the PIP graphs for two payoff matrices. The green shaded areas indicates areas where invasion has a positive probability and the intersection of green areas indicate evolutionary singular strategies. The difference in the two PIP graphs show that for the second matrix with a lower threshold H = 0.25, there is more green area above the threshold that can lead to converging to social cooperation and less area in the green area that leads to the defecting equilibrium. 
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/pip_basic}
+\end{figure}
+
+
+\section{Alpha Model}
+
+\subsection{Adaptive Dynamics Analysis}
+
+To extend the model to account for population structure, we introduce a new parameter $\alpha \in [0, 1]$ where $\alpha$ is the probability that an agent is matched to play against a copy of themselves instead of their original opponent. Therefore, the new payoff function is given by the sum of payoffs of when an agent plays their copy and when an agent plays their original opponent, weighted by the probabilities.
 \[ 
 \Pi ( y, x_{-}, \alpha ) = \alpha \Pi ( y, y) + (1-\alpha) \Pi ( y, x_{-} )
 \]
-The new invasion fitness of a rare mutant strategy y in a population that consists of only strategy x is given by 
+The new invasion fitness of a rare mutant strategy y in a population with a dominant strategy x is given by 
 \[
 f_x(y) = \Pi ( y, x_{-}, \alpha ) - \Pi ( x, x_{-}, \alpha )
 \]
@@ -129,6 +134,7 @@ f_x(y) = \alpha \Pi ( y, y) + (1-\alpha) \Pi ( y, x_{-} ) - \Pi ( x,  x_{-} )
 \begin{multline}
 f_x(y) = \alpha (R-S-T+P) y^2 +(S + \alpha T - P - \alpha P) y + (1-\alpha) (R-S-T+P) x y \\+ (-\alpha T + \alpha P - S + P) x + (-R+S+T-P) x^2
 \end{multline}
+The selection gradient and evolutionarily singular strategies for the alpha model are given by 
 \[
 D(x) = \diffp*{f_x(y)}{y}{y=x}
 \]
@@ -136,91 +142,145 @@ D(x) = \diffp*{f_x(y)}{y}{y=x}
 D(x) = (1+\alpha) (R-S-T+P) x + (S + \alpha T - P - \alpha P) 
 \]
 \[
-H = \frac{S + \alpha T - P - \alpha P}{(1+\alpha)(R-S-T+P)}
+D(H) = 0
+\]
+\[
+H = \frac{-S - \alpha T + P + \alpha P}{(1+\alpha)(R-S-T+P)}
 \]
 
-\section{Graphs}
-The derivative of the invasion fitness function of a rare mutant strategy, D(x), is graphed below for all possible dominant strategies, x $\in [0,1]$. Negative values of D(x) indicate the best payoffs are achieved by decreasing the value of x whereas for positive values of D(x), greater payoffs are achieved by increasing x. The function D(x) was graphed for two different payoff matrices [4,1:3,2] and [6,1;3,2]. This shows how the invasion fitness of a rare mutant strategy is impacted by the relative difference in the payoffs between cooperating and defecting. The graph below shows that when the payoff for cooperating is much greater than the payoff for cooperating, the threshold at which D(x) changes sign occurs at a smaller value of x. This demonstrates that greater relative payoffs for cooperation increase the probability of social cooperation as rare mutant strategies are more likely to increase the dominant strategy. This behaviour was observed in the simulation results. 
+\subsection{Graphs}
 
-\begin{figure}
-\centering
-\includegraphics[width=12cm]{images/invasion_fitness}
-\end{figure}
-
-The second graph shows the same function as the graph above, the derivative of the invasion fitness function of a rare mutant strategy, D(x), when we incorporate the parameter, alpha. The graphs shows D(x) for the same payoff matrix [4,1;3,2] but for three values of alpha. When alpha = 0, meaning the  probability that an agent is matched to play against a copy of themselves instead of their original opponent is zero, we observe the exact same function in the previous graph, as expected. When alpha = 1, D(x) is always positive illustrating that the agents learning to cooperate is always achieved if the agents are only playing against a copy of themselves. For alpha values between 0 and 1, as alpha increases the threshold for D(x) decreases. Therefore, the more likely the agents are to play against opponents that are similar to themselves, the more likely they will learn to cooperate. 
+The first graph shows the selection gradient of a mutant strategy, D(x), for three values of alpha using the payoff matrix [4,1;3,2]. When alpha = 0, meaning the  probability that an agent is matched to play against a copy of themselves instead of their original opponent is zero, we observe the same function of the basic model. When alpha = 1, D(x) is always positive, illustrating that the agents will always learn to cooperate if they are only playing against a copy of themselves. For alpha values between 0 and 1, as alpha increases the threshold for D(x) decreases. Therefore, the more likely the agents are to play against opponents that are similar to themselves, the more likely they will learn to cooperate. This conclusion is supported by the second graph that plots invasion fitness against mutant strategy values for different values of alpha and dominant strategies. 
 
 \begin{figure}
 \centering
 \includegraphics[width=12cm]{images/invasion_fitness_alpha}
 \end{figure}
 
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/inv_fit_alpha}
+\end{figure}
 
-\section{Extending to Ingroup and Outgroup Strategies}
+PIP graphs for three values of alpha are shown below and illustrate that as alpha increases, the number of combinations of mutant and dominant strategies that have a positive invasion fitness increases. 
 
-\subsection{Once Off Stag Hunt}
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/pip_alpha}
+\end{figure}
 
-Each agent in the population has a two-dimensional strategy profile strategy, $x_i$, consisting of an ingroup and outgroup strategy,  $x_i = (x_{in}, x_{out})$\\
+\section{Beta Model}
+
+\subsection{Adaptive Dynamics Analysis}
+
+In the beta model, each agent in the population has a two-dimensional strategy profile strategy, $x_i$, consisting of an ingroup and outgroup strategy,  $x_i = (x_{in}, x_{out})$\\
 \\
-$x_{in} \in [0,1]$ is the probability that an agent with a strategy profile x cooperates with an individual from the ingroup. \\
+Let $x_{in} \in [0,1]$ be the probability that an agent with a strategy profile x cooperates with an individual from the ingroup. \\
 \\
-$x_{out} \in [0,1]$ is the probability that an agent with a strategy profile x cooperates with an individual from the outgroup. \\
+Let $x_{out} \in [0,1]$ be the probability that an agent with a strategy profile x cooperates with an individual from the outgroup. \\
 \\
 Let $\beta_i \in [0,1]$ be the probability that agent i plays an individual from the ingroup.\\
 \\
 Let $\beta_{-i} = 1 -\beta_i $ be the probability that an agent of the opposite group of agent i plays an individual from the ingroup.\\
-
+\\
 Let $ \Pi ( y, x_{-}, \beta_y)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the rest of the population playing the strategy $x = (x_{in}, x_{out})$ where the probability of an agent playing the strategy y matching with an individual from the ingroup is $\beta_y$.
 \[
 \Pi ( y, x_{-} , \beta_y) = \beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} ) 
 \]
 \\
-The invasion fitness of a rare mutant strategy y in a population that consists of only strategy x is given by 
+The invasion fitness of a rare mutant strategy y in a population with a dominant strategy x is given by 
 \[
 f_x(y) = \Pi ( y, x_{-} , \beta_y) - \Pi ( x, x_{-} , \beta_x) 
 \]
-where $\beta_x = 1 - \beta_y$
+where $\beta_x = 1 - \beta_y.$
 \[
 f_x(y) = \beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} )  - \beta_x \Pi ( x_{in}, x_{in}) - (1-\beta_x) \Pi ( x_{out}, x_{out} ) 
 \]
+\\
+The selection gradient and the evolutionarily singular strategies for the beta model are given by 
+\[
+D(x) = \diffp*{f_x(y)}{y}{y=x}
+\]
+\[
+D(x) = (\beta_y((R - S - T + P) x_{in} + (S-P)), (1-\beta_y)((R - S - T + P) x_{out} + (S-P)))
+\]
+\[
+D(H) = 0 
+\]
+\[
+H = (\frac{P-S}{R - S - T +P}, \frac{P-S}{R - S - T +P}) 
+\]
+\\
+For the beta model, D(x) can have partial derivates that are negative, positive or zero in any combination. The first partial derivative describes how the agent should modify their ingroup strategy and the second partial derivative describes how the agent should adjust their outgroup strategy. 
 
+
+\subsection{Graphs}
+The selection gradient function of a mutant strategy with respect to the ingroup and outgroup strategy is graphed below. Negative values of the selection gradient indicate the best payoffs are achieved by decreasing the value of strategy whereas for positive values of $D(x)$, greater payoffs are achieved by increasing the strategy. The selection gradients are graphed for three different values of $\beta$. The left graph shows that as the probability of an agent plays an individual from the ingroup increases, meaning they belong to an increasing majority, the absolute value of $D(x_{in})$ increases. Whereas, the right graph illustrates that the opposite behaviour is observed for the selection gradient with respect to the outgroup. This result can be interpreted as when the agent belongs to a larger group within the population they update their strategies more rapidly. 
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{images/beta_sg}
+\end{figure}
+
+The invasion fitness for all combinations of mutant ingroup and outgroup strategies against the dominant strategy (0.9,0.1) is graphed below for various beta values. This graph illustrates an example of how beta effects the invasion fitness of possible 2-dimensional mutant strategies.
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/inv_fit_beta}
+\end{figure}
+
+
+\section{Complete Model with Alpha and Beta Parameters}
+
+\subsection{Adaptive Dynamics Analysis}
+
+In the complete model, alpha is included to model the effect of population structure and beta is used to control the relative proportions of the the two tags. In this model, the agents' strategy profiles are two-dimensional as before. When the agents are matched into pairs, their opponent is replaced with a copy of themselves with a probability of alpha and they play their ingroup strategy if this is the case. \\
+\\
+Let $ \Pi ( y, x_{-}, \alpha, \beta_y)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the dominant strategy $x = (x_{in}, x_{out})$  where $\alpha$ is the probability that an agent is matched to play against a copy of themselves instead of their original opponent and $\beta$ is the probability of an agent playing an individual from the ingroup.
+\[
+\Pi ( y, x_{-} , \alpha, \beta_y) = \alpha \Pi ( y_{in}, y_{in}) + (1-\alpha) (\beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} ) )
+\]
+\\
+The invasion fitness of a mutant strategy y in a population with a dominant strategy x is given by 
+\[
+f_x(y) = \Pi ( y, x_{-} , \alpha, \beta_y) - \Pi ( x, x_{-} , \alpha, \beta_x) 
+\]
+where $\beta_x = 1 - \beta_y$
+\begin{multline}
+f_x(y) = \alpha \Pi ( y_{in}, y_{in}) + (1-\alpha) (\beta_y \Pi ( y_{in}, x_{in}) + (1-\beta_y) \Pi ( y_{out}, x_{out} ) ) - (\alpha \Pi ( x_{in}, x_{in}) \\+ (1-\alpha) (\beta_x \Pi ( x_{in}, x_{in}) + (1-\beta_x) \Pi ( x_{out}, x_{out} ) ))
+\end{multline}
+\begin{multline}
+f_x(y) = \alpha \Pi ( y_{in}, y_{in}) + (1-\alpha) \beta_y \Pi ( y_{in}, x_{in}) + (1-\alpha) (1-\beta_y) \Pi ( y_{out}, x_{out} )  - (\alpha + (1-\alpha)\beta_x)\Pi ( x_{in}, x_{in}) \\- (1-\alpha) (1-\beta_x) \Pi ( x_{out}, x_{out} ) 
+\end{multline}
+\begin{multline}
+f_x(y) = \alpha (R - S - T +P) y_{in}^2 + (\alpha(R - S - T +P) + (1-\alpha)\beta_y(S-P))y_{in} + (1-\alpha)(1-\beta)(S-P)y_{out} \\ - (\alpha + (1-\alpha)\beta_x)(R - S - T +P)x_{in}^2 + ((1-\alpha)\beta_y(T-P) - (\alpha+(1-\alpha)\beta_x)(S+t-2P))x_{in} \\ - (1-\alpha)(1-\beta_y)(R - S - T +P)x_{out}^2 +((1-\alpha)(1-\beta_y)(T-P) - (1-\alpha)(1-\beta_x)(S+T-2P))x_{out} \\ + (1-\alpha)\beta_y(R - S - T +P)x_{in}y_{in} + (1-\alpha)(1-\beta_y)(R - S - T +P)x_{out}y_{out} + (1-\alpha)P
+\end{multline}
+The selection gradient and the evolutionarily singular strategies for the complete model are given by
 \[
 D(x) = \diffp*{f_x(y)}{y}{y=x}
 \]
 \\
 \[
-D(x) = (\beta_y((R - S - T + P) x_{in} + (S-P)), (1-\beta_y)((R - S - T + P) x_{out} + (S-P)))
-\]
-\\
-Let $H = (\frac{P-S}{R - S - T +P}, \frac{P-S}{R - S - T +P}) $ also known as the threshold with $ D(H) = 0 $.\\
-\\
-\\
-Depending on the strategy profiles of the dominant and rare mutant strategies and the probability of the rare strategy playing an ingroup individual, D(x) can have partial derivates that are negative, positive or zero in any combination. The first partial derivative describes how the agent should modify their ingroup strategy and the second partial derivative describes how the agent should adjust their outgroup strategy. 
-
-\subsection{Example}
-
-Consider a model with dominant strategy $x = (0.6, 0.4)$ interpreted as agents will only cooperate in 60\% of games when playing an individual from the ingroup and 40\% of games when playing an outgroup individual and a rare mutant strategy $y = (0.9, 0.7)$ representing agents will cooperate in 90\% of games when matched with an ingroup individual and 70\% of games when playing an outgroup agent and the probability of the rare startegy playing against an ingroup agent is 0.1. 
-\[
-   \text{Payoff Matrix} = \begin{pmatrix} 
-   6 & 1  \\
-   3 & 2  
-   \end{pmatrix} 
+D(x) = ((2\alpha + (1-\alpha)\beta_y)(R - S - T + P) x_{in} + \alpha(S+T-2P)), (1-\alpha)(1-\beta_y)((R - S - T + P) x_{out} + (S-P)))
 \]
 \[
-D(x) = (0.1((6 - 1 - 3 + 2)0.6 + (1-2)), (1-0.1)((6 - 1 - 3 + 2) 0.4 + (1-2)))
+D(H) = 0
 \]
 \[
-D(x) = (-0.76, 0.44)
+H = (\frac{\alpha(-S-T+2P)}{(2\alpha + (1-\alpha)\beta_y)(R - S - T + P)}, \frac{P-S}{(1-\alpha)(1-\beta_y)(R - S - T +P)}) 
 \]
-Since the partial derivative with respect to the ingroup strategy is negative  this suggests that the current dominant ingroup belief of $x = 0.6$ should be increased. Since the partial derivative with respect to the outgroup strategy is positive this suggests that the current dominant outgroup belief of $x = 0.4$ should be decreased. This is the expected behaviour. 
+\\
+The selection gradients and evolutionary singular points are different with respect to the ingroup and outgroup strategies as a result of agents playing their ingroup strategies when their opponent is replaced with a copy of themselves. 
 
+\subsection{Graphs}
 
-\section{Graphs for the Ingroup/Outgroup Model}
-The partial derivative of the invasion fitness function of a rare mutant strategy with respect to the ingroup strategy, $D(x_{in})$, is graphed below for all possible dominant ingroup strategies, $x_{in} \in [0,1]$. Negative values of $D(x_{in})$ indicate the best payoffs are achieved by decreasing the value of $x_{in} $ whereas for positive values $D(x_{in})$, greater payoffs are achieved by increasing  $x_{in} $. The function $D(x_{in})$ was graphed for two different values of $\beta$. This shows that as the probability of an agent playing an individual from the ingroup increases, meaning they belong to an increasing majority, the absolute value of $D(x_{in})$ increases. The exact same behaviour is observed when the ingroup strategy is fixed and the outgroup strategy is varied. This can be interpreted as when the agent belongs to a larger group within the population they update their strategies more rapidly. 
+The graph below shows the invasion fitness of all possible combinations of mutant ingroup and outgroup strategies against the dominant strategy x = (0.7,0.3) and payoff matrix = [4,1;3,2] for various alpha and beta combinations. 
+
+A similar pattern is observed looking across the rows as alpha increases and down the columns as beta increases that illustrates that both parameters have a similar effect on invasion fitness. This effect is that as either parameter increases, 2-dimensional strategies with higher vales for the outgroup become more effective against the prejudiced dominant of [0.7,0.3]. 
 
 \begin{figure}
 \centering
-\includegraphics[width=12cm]{images/beta_ingroup_graph}
+\includegraphics[width=15cm]{images/alpha_beta}
 \end{figure}
-
 
 \end{document}
