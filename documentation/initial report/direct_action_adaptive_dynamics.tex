@@ -149,6 +149,7 @@ D(H) = 0
 \[
 H = \frac{-S - \alpha T + P + \alpha P}{(1+\alpha)(R-S-T+P)}
 \]
+As $\alpha$ increases, the location of the ESS decreases. 
 
 \subsection{Graphs}
 
@@ -288,7 +289,69 @@ A similar pattern is observed looking across the rows as alpha increases and dow
 \begin{figure}
 \centering
 \includegraphics[width=15cm]{images/alpha_beta}
+\caption{ }
 \end{figure}
+
+\section{Model with Alpha, Beta and Kappa Parameters}
+
+\subsection{Adaptive Dynamics Analysis}
+
+Modelling the density of populations can be introduced to the model by incorporating a third parameter, kappa, that controls the frequency of social encounters. Let kappa be the probability that a pair of agents don't interact when matched. Low values of kappa mean the agents frequently interact when they encounter each other simulating high density populations whereas agents rarely interact for high values of kappa modelling populations with low density.\\
+\\
+Let $ \Pi ( y, x_{-}, \alpha, \beta_y, \kappa)$ be the payoff function of playing a strategy $y = (y_{in}, y_{out}) $ against the dominant strategy $x = (x_{in}, x_{out})$  where $\alpha$ is the probability that an agent is matched to play against a copy of themselves instead of their original opponent, $\beta$ is the probability of an agent playing an individual from the ingroup and $\kappa$ is the probability a matched pair of agents don't interact.
+$\kappa = (\kappa_{in}, \kappa_{out})$ where $\kappa_{in}$ is the probability of not interacting with an individual from the ingroup and $\kappa_{out}$ is the same for outgroup individuals. If the pair of agents don't interact when matched, both agents receive a payoff if $\sigma$, where $R > \sigma > P$. 
+\[
+\Pi ( y, x_{-} , \alpha, \beta_y, \kappa) = \beta_y(\kappa_{in}\sigma + (1-\kappa_{in})\Pi ( y_{in}, x_{in}, \alpha)) + (1-\beta_y)(\kappa_{out}\sigma + (1-\kappa_{out})\Pi ( y_{out}, x_{out}, \alpha))
+\]
+\[
+\Pi ( y, x_{-} , \alpha, \beta_y, \kappa) = (\beta_y\kappa_{in} + (1-\beta_y)\kappa_{out}) \sigma + \beta_y(1-\kappa_{in})\Pi ( y_{in}, x_{in}, \alpha)) + (1-\beta_y)(1-\kappa_{out})\Pi ( y_{out}, x_{out}, \alpha))
+\]
+\\
+The invasion fitness of a mutant strategy y in a population with a dominant strategy x is given by 
+\[
+f_x(y) = \Pi ( y, x_{-} , \alpha, \beta_y, \kappa) - \Pi ( x, x_{-} , \alpha, \beta_x, \kappa) 
+\]
+where $\beta_x = 1 - \beta_y$
+\begin{multline}
+f_x(y) = (\beta_y\kappa_{in} + (1-\beta_y)\kappa_{out}) \sigma + \beta_y(1-\kappa_{in})\Pi ( y_{in}, x_{in}, \alpha)) + (1-\beta_y)(1-\kappa_{out})\Pi ( y_{out}, x_{out}, \alpha)) - \\(\beta_x\kappa_{in} + (1-\beta_x)\kappa_{out}) \sigma - \beta_x(1-\kappa_{in})\Pi ( x_{in}, x_{in}, \alpha)) - (1-\beta_x)(1-\kappa_{out})\Pi ( x_{out}, x_{out}, \alpha))
+\end{multline}
+\begin{multline}
+f_x(y) = ((2\beta_y-1)\kappa_{in} + (1-2\beta_y)\kappa_{out}) \sigma + \beta_y(1-\kappa_{in})\Pi ( y_{in}, x_{in}, \alpha)) + (1-\beta_y)(1-\kappa_{out})\Pi ( y_{out}, x_{out}, \alpha)) \\- (1-\beta_y)(1-\kappa_{in})\Pi ( x_{in}, x_{in}, \alpha)) - \beta_y(1-\kappa_{out})\Pi ( x_{out}, x_{out}, \alpha))
+\end{multline}
+\begin{multline}
+f_x(y) = ((2\beta_y-1)\kappa_{in} + (1-2\beta_y)\kappa_{out}) \sigma + \beta_y(1-\kappa_{in})(\alpha\Pi(y_{in},y_{in}) + (1-\alpha)\Pi(y_{in},x_{in}) + \\(1-\beta_y)(1-\kappa_{out})(\alpha\Pi(y_{out},y_{out}) + (1-\alpha)\Pi(y_{out},x_{out}))+ c(x)
+\end{multline}
+\begin{multline}
+f_x(y) = ((2\beta_y-1)\kappa_{in} + (1-2\beta_y)\kappa_{out}) \sigma + \beta_y(1-\kappa_{in})(\alpha(R y_{in}^2 + S (1-y_{in}) y_{in} +  T y_{in}(1-y_{in}) + P (1-y_{in})^2) + \\(1-\alpha)(R x_{in} y_{in} + S (1-x_{in}) y_{in} +  T x _{in}(1-y_{in}) + P (1-x_{in}) (1-y_{in}))) + (1-\beta_y)(1-\kappa_{out})(\alpha(R y_{out}^2 + S (1-y_{out}) y_{out} \\+  T y_{out}(1-y_{out})+ P (1-y_{out})^2)  + (1-\alpha)(R x_{out} y_{out} + S (1-x_{out}) y_{out} +  T x _{out}(1-y_{out}) + P (1-x_{out}) (1-y_{out}))+ c(x)
+\end{multline}
+
+The selection gradient and the evolutionarily singular strategies for the complete model are given by
+\[
+D(x) = \diffp*{f_x(y)}{y}{y=x}
+\]
+\\
+\begin{multline}
+D(x) = (\beta_y(1-\kappa_{in})((1+\alpha)(R - S - T + P) x_{in} + (\alpha(T-P)+S-P)),\\ (1-\beta_y)(1-\kappa_{out})((1+\alpha)(R - S - T + P) x_{out} + (\alpha(T-P)+S-P)))
+\end{multline}
+\[
+D(H) = 0
+\]
+\[
+H = (\frac{P-S-\alpha(T-P)}{(1+\alpha)(R - S - T + P)}, \frac{P-S-\alpha(T-P)}{(1+\alpha)(R - S - T + P)}) 
+\]
+\\
+Therefore, the location of the evolutionary singular strategies does not depend on $\kappa$ or $\beta_y$ but does depend on $\alpha$, the probability the agent matches with a copy of themselves. The location of the evolutionary singular strategies is the same as the Alpha Model and when $\alpha=1$, the location is the same as the basic game.  At equilibrium there is no prejudice and the ingroup and outgroup strategies are the same. As $\alpha$ increases, the location of the ESS decreases.  However,  $\kappa$ or $\beta_y$ both control the selection gradient and therefore the rate of evolutionary change. As $\beta_y$ increases, the selection gradient with respect to the ingroup strategy increases and the gradient with respect to the outgroup strategy decreases. This can be interpretable as when the rare mutant is increasingly a part of the majority, the agents have more trust in their ingroup individuals. As $\kappa$ increases, meaning the agents interact less the selection gradient vanishes reflecting that they trust other agents less. 
+
+\subsection{Graphs} 
+
+Figure 9 shows that a cooperating strategy is most likely to invade a prejudice population when the population density is low and the population structure, probability of the rare mutant strategy meeting a copy of itself, is high or if the rare mutant belongs to a minority. 
+
+\begin{figure}
+\centering
+\includegraphics[width=15cm]{images/kappa_graphs}
+\caption{ }
+\end{figure}
+
 
 \section{Model with Alpha, Beta and Delta Parameters}
 
@@ -353,7 +416,5 @@ H = (\frac{\alpha(-(S(1-\delta)+P\delta)-(T(1-\delta)+P\delta)+2P)}{(2\alpha + (
 \end{multline}
 \\
 The selection gradients and evolutionary singular points are different with respect to the ingroup and outgroup strategies as a result of agents playing their ingroup strategies when their opponent is replaced with a copy of themselves. 
-
-
 
 \end{document}
