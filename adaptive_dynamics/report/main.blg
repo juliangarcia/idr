@@ -1,0 +1,59 @@
+This is BibTeX, Version 0.99d (MiKTeX 2.9.7350 64-bit)
+Capacity: max_strings=4000, hash_size=5000, hash_prime=4253
+The top-level auxiliary file: main.aux
+The style file: splncs04.bst
+Database file #1: references.bib
+Warning--entry type for "Ausgrid" isn't style-file defined
+--line 1 of file references.bib
+Warning--I'm ignoring Ausgrid's extra "year" field
+--line 7 of file references.bib
+Warning--I'm ignoring Appliances's extra "year" field
+--line 15 of file references.bib
+Warning--I'm ignoring Power's extra "year" field
+--line 23 of file references.bib
+Warning--there's a number but no volume in cian2014climate
+Warning--empty journal in fortunato2018revisiting
+Warning--empty journal in Appliances
+Warning--empty journal in Power
+You've used 36 entries,
+            2850 wiz_defined-function locations,
+            803 strings with 11258 characters,
+and the built_in function-call counts, 20746 in all, are:
+= -- 1749
+> -- 592
+< -- 42
++ -- 253
+- -- 208
+* -- 1285
+:= -- 2592
+add.period$ -- 42
+call.type$ -- 36
+change.case$ -- 224
+chr.to.int$ -- 0
+cite$ -- 40
+duplicate$ -- 1869
+empty$ -- 1855
+format.name$ -- 239
+if$ -- 4568
+int.to.chr$ -- 0
+int.to.str$ -- 36
+missing$ -- 361
+newline$ -- 114
+num.names$ -- 72
+pop$ -- 682
+preamble$ -- 1
+purify$ -- 173
+quote$ -- 0
+skip$ -- 641
+stack$ -- 0
+substring$ -- 1270
+swap$ -- 1046
+text.length$ -- 42
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 142
+warning$ -- 4
+while$ -- 176
+width$ -- 38
+write$ -- 354
+(There were 8 warnings)

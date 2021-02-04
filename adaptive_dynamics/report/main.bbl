@@ -1,0 +1,175 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{ahmadi2020hybrid}
+Ahmadi, S., hossien Fakehi, A., Haddadi, M., Iranmanesh, S.H., et~al.: A hybrid
+  stochastic model based bayesian approach for long term energy demand
+  managements. Energy Strategy Reviews  \textbf{28},  100462 (2020)
+
+\bibitem{anand2020forecasting}
+Anand, A., Suganthi, L.: Forecasting of electricity demand by hybrid ann-pso
+  models. In: Deep Learning and Neural Networks: Concepts, Methodologies,
+  Tools, and Applications, pp. 865--882. IGI Global (2020)
+
+\bibitem{assaad2008new}
+Assaad, M., Bon{\'e}, R., Cardot, H.: A new boosting algorithm for improved
+  time-series forecasting with recurrent neural networks. Information Fusion
+  \textbf{9}(1),  41--55 (2008)
+
+\bibitem{Ausgrid}
+Ausgrid: {Solar home electricity data} (2011-2013),
+  \url{https://www.ausgrid.com.au/Industry/Our-Research/Data-to-share/Solar-home-electricity-data}
+
+\bibitem{blundell2015weight}
+Blundell, C., Cornebise, J., Kavukcuoglu, K., Wierstra, D.: Weight uncertainty
+  in neural networks. arXiv preprint arXiv:1505.05424  (2015)
+
+\bibitem{cai2019predicting}
+Cai, H., Shen, S., Lin, Q., Li, X., Xiao, H.: Predicting the energy consumption
+  of residential buildings for regional electricity supply-side and demand-side
+  management. IEEE Access  \textbf{7},  30386--30397 (2019)
+
+\bibitem{casteleiro2019short}
+Casteleiro-Roca, J.L., G{\'o}mez-Gonz{\'a}lez, J.F., Calvo-Rolle, J.L., Jove,
+  E., Quinti{\'a}n, H., Gonzalez~Diaz, B., Mendez~Perez, J.A.: Short-term
+  energy demand forecast in hotels using hybrid intelligent modeling. Sensors
+  \textbf{19}(11), ~2485 (2019)
+
+\bibitem{cian2014climate}
+Cian, E.d., Wing, I., et~al.: Climate change impacts on energy demand. CMCC
+  Research Paper (RP0240) (2014)
+
+\bibitem{deb2017review}
+Deb, C., Zhang, F., Yang, J., Lee, S.E., Shah, K.W.: A review on time series
+  forecasting techniques for building energy consumption. Renewable and
+  Sustainable Energy Reviews  \textbf{74},  902--924 (2017)
+
+\bibitem{esfetang2018novel}
+Esfetang, N.N., Kazemzadeh, R.: A novel hybrid technique for prediction of
+  electric power generation in wind farms based on wipso, neural network and
+  wavelet transform. Energy  \textbf{149},  662--674 (2018)
+
+\bibitem{fattah2018forecasting}
+Fattah, J., Ezzine, L., Aman, Z., El~Moussami, H., Lachhab, A.: Forecasting of
+  demand using arima model. International Journal of Engineering Business
+  Management  \textbf{10},  1847979018808673 (2018)
+
+\bibitem{fortunato2017bayesian}
+Fortunato, M., Blundell, C., Vinyals, O.: Bayesian recurrent neural networks.
+  arXiv preprint arXiv:1704.02798  (2017)
+
+\bibitem{fortunato2018revisiting}
+Fortunato, M., Blundell, C., Vinyals, O.: Revisiting bayes by backprop  (2018)
+
+\bibitem{gal2016dropout}
+Gal, Y., Ghahramani, Z.: Dropout as a bayesian approximation: Representing
+  model uncertainty in deep learning. In: international conference on machine
+  learning. pp. 1050--1059 (2016)
+
+\bibitem{gal2017concrete}
+Gal, Y., Hron, J., Kendall, A.: Concrete dropout. In: Advances in neural
+  information processing systems. pp. 3581--3590 (2017)
+
+\bibitem{ghalehkhondabi2017overview}
+Ghalehkhondabi, I., Ardjmand, E., Weckman, G.R., Young, W.A.: An overview of
+  energy demand forecasting methods published in 2005--2015. Energy Systems
+  \textbf{8}(2),  411--447 (2017)
+
+\bibitem{hernandez2015probabilistic}
+Hern{\'a}ndez-Lobato, J.M., Adams, R.: Probabilistic backpropagation for
+  scalable learning of bayesian neural networks. In: International Conference
+  on Machine Learning. pp. 1861--1869 (2015)
+
+\bibitem{hochreiter1997long}
+Hochreiter, S., Schmidhuber, J.: Long short-term memory. Neural computation
+  \textbf{9}(8),  1735--1780 (1997)
+
+\bibitem{hoffman2014no}
+Hoffman, M.D., Gelman, A.: The no-u-turn sampler: adaptively setting path
+  lengths in hamiltonian monte carlo. Journal of Machine Learning Research
+  \textbf{15}(1),  1593--1623 (2014)
+
+\bibitem{kaytez2015forecasting}
+Kaytez, F., Taplamacioglu, M.C., Cam, E., Hardalac, F.: Forecasting electricity
+  consumption: A comparison of regression analysis, neural networks and least
+  squares support vector machines. International Journal of Electrical Power \&
+  Energy Systems  \textbf{67},  431--438 (2015)
+
+\bibitem{kingma2013auto}
+Kingma, D.P., Welling, M.: Auto-encoding variational bayes. arXiv preprint
+  arXiv:1312.6114  (2013)
+
+\bibitem{mullachery2018bayesian}
+Mullachery, V., Khera, A., Husain, A.: Bayesian neural networks. arXiv preprint
+  arXiv:1801.07710  (2018)
+
+\bibitem{neal2012bayesian}
+Neal, R.M.: Bayesian learning for neural networks, vol.~118. Springer Science
+  \& Business Media (2012)
+
+\bibitem{neal2011mcmc}
+Neal, R.M., et~al.: Mcmc using hamiltonian dynamics. Handbook of markov chain
+  monte carlo  \textbf{2}(11), ~2 (2011)
+
+\bibitem{paisley2012variational}
+Paisley, J., Blei, D., Jordan, M.: Variational bayesian inference with
+  stochastic search. arXiv preprint arXiv:1206.6430  (2012)
+
+\bibitem{rahman2018predicting}
+Rahman, A., Srikumar, V., Smith, A.D.: Predicting electricity consumption for
+  commercial and residential buildings using deep recurrent neural networks.
+  Applied energy  \textbf{212},  372--385 (2018)
+
+\bibitem{raza2017intelligent}
+Raza, M.Q., Nadarajah, M., Hung, D.Q., Baharudin, Z.: An intelligent hybrid
+  short-term load forecasting model for smart power grids. Sustainable Cities
+  and Society  \textbf{31},  264--275 (2017)
+
+\bibitem{srinivasan2008energy}
+Srinivasan, D.: Energy demand prediction using gmdh networks. Neurocomputing
+  \textbf{72}(1-3),  625--629 (2008)
+
+\bibitem{tang2008changing}
+Tang, T., Bhamra, T.: Changing energy consumption behaviour through sustainable
+  product design. In: DS 48: Proceedings DESIGN 2008, the 10th International
+  Design Conference, Dubrovnik, Croatia (2008)
+
+\bibitem{tokgoz2018rnn}
+Tokg{\"o}z, A., {\"U}nal, G.: A rnn based time series approach for forecasting
+  turkish electricity load. In: 2018 26th Signal Processing and Communications
+  Applications Conference (SIU). pp.~1--4. IEEE (2018)
+
+\bibitem{torabi2019hybrid}
+Torabi, M., Hashemi, S., Saybani, M.R., Shamshirband, S., Mosavi, A.: A hybrid
+  clustering and classification technique for forecasting short-term energy
+  consumption. Environmental Progress \& Sustainable Energy  \textbf{38}(1),
+  66--76 (2019)
+
+\bibitem{Appliances}
+{UCI Machine Learning Repository}: Appliance energy prediction  (2006),
+  \url{https://archive.ics.uci.edu/ml/datasets/Appliances+energy+prediction}
+
+\bibitem{Power}
+{UCI Machine Learning Repository}: Individual household electric power
+  consumption  (2010),
+  \url{https://archive.ics.uci.edu/ml/datasets/Individual+household+electric+power+consumption}
+
+\bibitem{valibeygi2019robust}
+Valibeygi, A., Habib, A.H., de~Callafon, R.A.: Robust power scheduling for
+  microgrids with uncertainty in renewable energy generation. In: 2019 IEEE
+  Power \& Energy Society Innovative Smart Grid Technologies Conference (ISGT).
+  pp.~1--5. IEEE (2019)
+
+\bibitem{zhou2016understanding}
+Zhou, K., Yang, S.: Understanding household energy consumption behavior: The
+  contribution of energy big data analytics. Renewable and Sustainable Energy
+  Reviews  \textbf{56},  810--819 (2016)
+
+\bibitem{zhu2017deep}
+Zhu, L., Laptev, N.: Deep and confident prediction for time series at uber. In:
+  2017 IEEE International Conference on Data Mining Workshops (ICDMW). pp.
+  103--110. IEEE (2017)
+
+\end{thebibliography}
