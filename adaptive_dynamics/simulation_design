@@ -1,0 +1,283 @@
+import numpy as np
+from numba import jit
+import csv
+import json
+import sys
+import networkx as nx
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import seaborn  as sns
+
+
+@jit(nopython=True)
+def permute(matching, n):
+    for i in range(n - 1):
+        j = i + np.random.randint(n - i)
+        temp = matching[i]
+        matching[i] = matching[j]
+        matching[j] = temp
+
+
+class Model:
+    def __init__(self, number_of_agents, R, S, T, P,
+                 alpha, beta, kappa, sigma, gamma):
+
+        # 0 is cooperate 1 is defect
+        self.game = np.array([[R, S], [T, P]])
+        self.number_of_agents = number_of_agents
+
+        # list to store their tags
+        self.tags = np.ones(number_of_agents, dtype=int)
+        for i in range(int(self.number_of_agents * beta)):
+            self.tags[i] = 0
+
+        # lists to store the agents' ingroup and outgroup beliefs
+        # initially random
+        self.ingroup = np.random.rand(number_of_agents)
+        self.outgroup = np.random.rand(number_of_agents)
+
+        # list to work out matchings for each round
+        self.matching_indices = list(range(self.number_of_agents))
+
+        # list to store each agent's payoff
+        self.payoffs = np.zeros(number_of_agents, dtype=float)
+
+        # lists to store the frequency of cooperation each round
+        self.coop_freq = 0
+        self.coop_freq_in = 0
+        self.coop_freq_out = 0
+
+        self.alpha = alpha  # probability of matching with a copy of yourself
+        self.beta = beta    # relative proportions of each groups
+        self.gamma = gamma  # mutation rate
+        self.sigma = sigma  # payoff for not playing that round
+        self.kappa = kappa  # probability of not playing when matched
+
+        # list to store all relevant time series
+        self.avg_payoff_0_time_series = []
+        self.avg_payoff_1_time_series = []
+        self.avg_payoff_time_series = []
+        self.avg_ingroup_0_time_series = []
+        self.avg_ingroup_1_time_series = []
+        self.avg_outgroup_0_time_series = []
+        self.avg_outgroup_1_time_series = []
+        self.coop_freq_time_series = []
+        self.coop_freq_in_time_series = []
+        self.coop_freq_out_time_series = []
+
+    def encounter(self, index_focal, index_other):
+        if self.tags[index_focal] == self.tags[index_other]: # ingroup interaction
+
+            # choice focal
+            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_focal],
+                                                            1.0 - self.ingroup[index_focal]]))
+            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_focal],
+                                                            1.0 - self.ingroup[index_focal]]))
+
+            choice_focal = 0 if choice_0_value > choice_1_value else 1
+
+            # choice other
+            choice_0_value = np.dot(self.game[0], np.array([self.ingroup[index_other],
+                                                            1.0 - self.ingroup[index_other]]))
+            choice_1_value = np.dot(self.game[1], np.array([self.ingroup[index_other],
+                                                            1.0 - self.ingroup[index_other]]))
+            choice_other = 0 if choice_0_value > choice_1_value else 1
+
+            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+
+        else: # outgroup interaction
+            # choice focal
+            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_focal],
+                                                            1.0 - self.outgroup[index_focal]]))
+            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_focal],
+                                                            1.0 - self.outgroup[index_focal]]))
+            choice_focal = 0 if choice_0_value > choice_1_value else 1
+
+            # choice other
+            choice_0_value = np.dot(self.game[0], np.array([self.outgroup[index_other],
+                                                            1.0 - self.outgroup[index_other]]))
+            choice_1_value = np.dot(self.game[1], np.array([self.outgroup[index_other],
+                                                            1.0 - self.outgroup[index_other]]))
+            choice_other = 0 if choice_0_value > choice_1_value else 1
+
+            return self.game[choice_focal, choice_other], self.game[choice_other, choice_focal]
+
+    def compute_payoff(self):
+        # re-initialise each list/variable
+        self.coop_freq = 0
+        self.coop_freq_in = 0
+        self.coop_freq_out = 0
+        in_games = 0
+        out_games = 0
+        self.payoffs = np.zeros(self.number_of_agents)
+        #permute(self.matching_indices, self.number_of_agents)
+        np.random.shuffle(self.matching_indices)  # randomly rematch the agents into pairs
+        for i in range(0, self.number_of_agents, 2):
+            focal_index = self.matching_indices[i]
+            other_index = self.matching_indices[i + 1]
+
+            if np.random.uniform() < self.kappa:  # the agents do not play
+                self.payoffs[focal_index] = self.sigma
+                self.payoffs[other_index] = self.sigma
+            else: # the agents play
+                payoff_focal, payoff_other = self.encounter(focal_index, other_index)
+                self.payoffs[focal_index] = self.payoffs[focal_index] + payoff_focal
+                self.payoffs[other_index] = self.payoffs[other_index] + payoff_other
+
+                if self.tags[focal_index] == self.tags[other_index]: # ingroup
+                    in_games += 1
+                    if payoff_focal == self.game[0][0]:  # cooperated
+                        self.coop_freq += 1
+                        self.coop_freq_in += 1
+                else: #outgroup
+                    out_games += 1
+                    if payoff_focal == self.game[0][0]:  # cooperated
+                        self.coop_freq += 1
+                        self.coop_freq_out += 1
+
+            # Payoff = payoff from the round + alpha*payoff achieved playing a copy of yourself
+            self.payoffs[focal_index] += self.alpha*self.encounter(focal_index, focal_index)[0]
+            self.payoffs[other_index] += self.alpha * self.encounter(other_index, other_index)[0]
+
+        if in_games != 0:
+            self.coop_freq_in /= in_games
+        if out_games != 0:
+            self.coop_freq_out /= out_games
+
+    def step(self, selection_intensity):
+        # Compute the current payoff
+        self.compute_payoff()
+
+        # Record the average payoff for each group
+        self.avg_payoff_0_time_series.append(np.sum(self.payoffs[0:int(self.number_of_agents*self.beta)])/len(self.payoffs[0:int(self.number_of_agents*self.beta)]))
+        self.avg_payoff_1_time_series.append(np.sum(self.payoffs[int(self.number_of_agents*self.beta):]/len(self.payoffs[int(self.number_of_agents*self.beta):])))
+        self.avg_payoff_time_series.append(np.sum(self.payoffs / self.number_of_agents))
+
+        # Record average in/outgroup beliefs for each group
+        self.avg_ingroup_0_time_series.append(np.sum(self.ingroup[0:int(self.number_of_agents*self.beta)])/len(self.ingroup[0:int(self.number_of_agents*self.beta)]))
+        self.avg_ingroup_1_time_series.append(np.sum(self.ingroup[int(self.number_of_agents*self.beta):]/len(self.ingroup[int(self.number_of_agents*self.beta):])))
+
+        self.avg_outgroup_0_time_series.append(np.sum(self.outgroup[0:int(self.number_of_agents*self.beta)])/len(self.outgroup[0:int(self.number_of_agents*self.beta)]))
+        self.avg_outgroup_1_time_series.append(np.sum(self.outgroup[int(self.number_of_agents*self.beta):]/len(self.outgroup[int(self.number_of_agents*self.beta):])))
+
+        # Record cooperation frequency
+        self.coop_freq_time_series.append(self.coop_freq / (self.number_of_agents / 2))
+        self.coop_freq_in_time_series.append(self.coop_freq_in)
+        self.coop_freq_out_time_series.append(self.coop_freq_out)
+
+        # Find the fitness probability distribution (using exponential selection intensity) for each group
+        payoff_sum_0 = np.sum(np.exp(selection_intensity*self.payoffs[0:int(self.number_of_agents*self.beta)]))
+        payoff_sum_1 = np.sum(np.exp(selection_intensity*self.payoffs[int(self.number_of_agents*self.beta):]))
+
+        fitness_probabilities_0 = np.exp(selection_intensity*self.payoffs[0:int(self.number_of_agents*self.beta)])/payoff_sum_0
+        fitness_probabilities_1 = np.exp(selection_intensity*self.payoffs[int(self.number_of_agents*self.beta):])/payoff_sum_1
+
+        new_ingroup = np.zeros(self.number_of_agents)
+        new_outgroup = np.zeros(self.number_of_agents)
+        new_generation = np.zeros(self.number_of_agents)
+
+        # Reproduction Process: Fitness Proportionate Selection within groups for all agents
+        for i in range(self.number_of_agents):
+            if i < int(self.number_of_agents*self.beta):
+                current_agent = np.random.choice(range(int(self.number_of_agents*self.beta)), p=fitness_probabilities_0)
+            else:
+                current_agent = np.random.choice(range(int(self.number_of_agents*self.beta), self.number_of_agents),
+                                                 p=fitness_probabilities_1)
+            new_ingroup[i] = self.ingroup[current_agent]
+            new_outgroup[i] = self.outgroup[current_agent]
+            new_generation[i] = current_agent
+
+        # Mutation
+        for i in range(self.number_of_agents):
+            if np.random.rand() <= self.gamma:
+                # 50% of times mutate ingroup, other times mutate outgroup
+                if np.random.rand() <= 0.5:
+                    delta = np.random.normal(0.0, 0.05)
+                    while new_ingroup[i] + delta < 0 or new_ingroup[i] + delta > 1:
+                        delta = np.random.normal(0.0, 0.05)
+                    new_ingroup[i] += delta
+                else:
+                    delta = np.random.normal(0.0, 0.05)
+                    while new_outgroup[i] + delta < 0 or new_outgroup[i] + delta > 1:
+                        delta = np.random.normal(0.0, 0.05)
+                    new_outgroup[i] += delta
+        self.ingroup = new_ingroup
+        self.outgroup = new_outgroup
+
+    def run_simulation(self, number_of_steps, selection_intensity, data_recording, data_file_name='data.csv'):
+        if data_recording:
+            with open(data_file_name, 'w', newline='\n') as out_file:
+                writer = csv.writer(out_file)
+                for _ in range(number_of_steps):
+                    self.step(selection_intensity)
+                    writer.writerow(self.payoffs)
+        else:
+            for _ in range(number_of_steps):
+                self.step(selection_intensity)
+
+
+def main(number_of_agents, R, S, T, P, alpha, beta, kappa, sigma, gamma, number_of_steps, selection_intensity,
+         data_recording):
+    model = Model(number_of_agents, R, S, T, P, alpha, beta, kappa, sigma, gamma)
+    model.run_simulation(number_of_steps, selection_intensity, data_recording)
+    '''
+    # Plotting option 
+    fig, axs = plt.subplots(2, 3, figsize=(13, 7))
+    fig.suptitle("200 Agents, Payoff Matrix = [4,0;3,1], Alpha = 0.2, delta = 0.55\nEpsilon = 0.0, Kappa = 0.1",
+                 fontsize=16, fontweight="bold")
+    axs[0,0].plot(model.avg_payoff_0_time_series, label = "Ingroup")
+    axs[0,0].set_title("Average Payoffs")
+    #axs[0,0].set_ylim(-1.1,3.1)
+    axs[0,0].set_ylabel("Tag 0", fontsize=14, fontweight="bold")
+    axs[0,1].plot(model.avg_ingroup_0_time_series, label = "Ingroup")
+    axs[0, 1].plot(model.avg_outgroup_0_time_series, label = "Outgroup")
+    axs[0,1].set_title("Average Beliefs")
+    axs[0,1].legend()
+    axs[0, 1].set_ylim(0, 1)
+    axs[1, 0].plot(model.avg_payoff_1_time_series)
+    axs[1, 0].set_ylabel("Tag 1", fontsize=14, fontweight="bold")
+    axs[1, 0].set_title("Average Payoffs")
+    #axs[1, 0].set_ylim(-1.1,3.1)
+    axs[1, 1].plot(model.avg_ingroup_1_time_series, label="Ingroup")
+    axs[1, 1].plot(model.avg_outgroup_1_time_series, label="Outgroup")
+    axs[1, 1].set_title("Average Beliefs")
+    axs[1, 1].legend()
+    axs[1, 1].set_ylim(0, 1)
+    axs[0, 2].plot(model.coop_freq_time_series)
+    axs[0, 2].set_title("Cooperativity of whole Population")
+    axs[0, 2].set_ylim(-0.05, 1.05)
+    axs[1, 2].set_ylim(-0.05, 1.05)
+    axs[1, 2].plot(model.coop_freq_in_time_series, label = "Ingroup")
+    axs[1, 2].plot(model.coop_freq_out_time_series, label = "Outgroup")
+    axs[1, 2].set_title("Cooperativity of Each Type of Interaction")
+    axs[1, 2].legend()
+    plt.show()
+    '''
+
+
+
+    pred0 = np.array(model.avg_ingroup_0_time_series[-100:]) - np.array(model.avg_outgroup_0_time_series[-100:])
+    pred1 = np.array(model.avg_ingroup_1_time_series[-100:]) - np.array(model.avg_outgroup_1_time_series[-100:])
+    pred = np.append(pred0 , pred1)
+    #return [np.mean(pred), np.mean(model.coop_freq_time_series)]
+    return np.mean(pred)
+
+if __name__ == "__main__":
+    #main(100, 4,1,3,2, 0.3, 0.5, 0.3, 2.5, 0.01, 100, 1, True)
+
+    W = np.zeros((10, 10))
+    x = np.arange(0.1, 1, 0.1)
+    for i in range(len(x)):
+        x[i] = round(x[i], 1)
+    y = x[::-1]
+    for i in range(len(x)):
+        for j in range(len(x)):
+            W[i][j] = main(100, 4,1,3,2, x[i], 0.5, x[j], 2.5, 0.01, 10000, 1, True)
+    Wflipped = np.flip(W, axis=0)
+    g2 = sns.heatmap(Wflipped, cmap="YlGnBu", cbar=True, xticklabels=x, yticklabels=y, vmin=0, vmax=1)
+    g2.set_title('Prejudice\n100 Agents, Payoff Matrix = [4,1;3,2], Beta = 0.5, Sigma = 2.5, Gamma = 0.01, Steps = 10000')
+    g2.set_ylabel('Population Structure (Alpha)')
+    g2.set_xlabel('Inverse Population Density (Kappa)')
+    plt.show()
