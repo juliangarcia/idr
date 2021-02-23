@@ -1,0 +1,13 @@
+#!/bin/env bash
+#SBATCH --job-name=EVO230221
+#SBATCH --time=24:00:00
+#SBATCH --mem=10000
+#SBATCH --array=1-500
+#SBATCH --output=EVO230221.out
+#SBATCH --open-mode=append
+#SBATCH --partition=short
+
+module load anaconda
+
+CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST_EVO230221 | tail -1`
+$CMD
