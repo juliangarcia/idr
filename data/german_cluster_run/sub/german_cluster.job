@@ -1,13 +1,13 @@
 #!/bin/env bash
 #SBATCH --job-name=german_cluster
-#SBATCH --time=24:00:00
+#SBATCH --time=72:00:00
 #SBATCH --mem=10000
-#SBATCH --array=1-500
+#SBATCH --array=1-160
 #SBATCH --output=german_cluster.out
 #SBATCH --open-mode=append
-#SBATCH --partition=short
+#SBATCH -p amd
 
-module load anaconda
+module load python/3.5.0
 
 CMD=`head -n ${SLURM_ARRAY_TASK_ID} LIST | tail -1`
 $CMD
